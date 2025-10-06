@@ -124,6 +124,18 @@ main {
     text-align: center;
     font-size: 0.95rem;
     font-weight: 500;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.judge-toggle img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--border);
 }
 
 .judge-toggle:hover {
@@ -136,6 +148,10 @@ main {
     background: var(--accent);
     color: var(--white);
     border-color: var(--accent);
+}
+
+.judge-toggle.selected img {
+    border-color: var(--white);
 }
 
 .toggle-btn {

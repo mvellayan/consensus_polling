@@ -157,10 +157,25 @@ def index():
 def get_judges():
     """Get list of all judges."""
     judge_assistants = load_judge_assistants()
+
+    # Judge profile pictures
+    judge_images = {
+        'alito': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/Associate_Justice_Samuel_A._Alito%2C_Jr._%28cropped%29.jpg/220px-Associate_Justice_Samuel_A._Alito%2C_Jr._%28cropped%29.jpg',
+        'barrett': 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Associate_Justice_Amy_Coney_Barrett_Official_Portrait_%28cropped%29.jpg/220px-Associate_Justice_Amy_Coney_Barrett_Official_Portrait_%28cropped%29.jpg',
+        'gorsuch': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/Associate_Justice_Neil_Gorsuch_Official_Portrait_%28cropped_2%29.jpg/220px-Associate_Justice_Neil_Gorsuch_Official_Portrait_%28cropped_2%29.jpg',
+        'jackson': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Ketanji_Brown_Jackson_official_SCOTUS_portrait_%28cropped%29.jpg/220px-Ketanji_Brown_Jackson_official_SCOTUS_portrait_%28cropped%29.jpg',
+        'kagan': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Associate_Justice_Elena_Kagan_Official_Portrait_%28cropped%29.jpg/220px-Associate_Justice_Elena_Kagan_Official_Portrait_%28cropped%29.jpg',
+        'kavanaugh': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Associate_Justice_Brett_Kavanaugh_Official_Portrait_%28cropped%29.jpg/220px-Associate_Justice_Brett_Kavanaugh_Official_Portrait_%28cropped%29.jpg',
+        'roberts': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Chief_Justice_John_G._Roberts%2C_Jr._%28Cropped%29.jpg/220px-Chief_Justice_John_G._Roberts%2C_Jr._%28Cropped%29.jpg',
+        'sotomayor': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Sonia_Sotomayor_in_SCOTUS_robe_crop.jpg/220px-Sonia_Sotomayor_in_SCOTUS_robe_crop.jpg',
+        'thomas': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Associate_Justice_Clarence_Thomas%2C_official_SCOTUS_portrait%2C_crop.jpg/220px-Associate_Justice_Clarence_Thomas%2C_official_SCOTUS_portrait%2C_crop.jpg'
+    }
+
     judges = [
         {
             'judge_name': name,
-            'judge_title': info['judge_title']
+            'judge_title': info['judge_title'],
+            'image': judge_images.get(name, 'https://via.placeholder.com/48')
         }
         for name, info in judge_assistants.items()
     ]

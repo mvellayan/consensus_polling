@@ -34,7 +34,8 @@ async function loadJudges() {
 function renderJudges() {
     judgesGrid.innerHTML = judges.map(judge => `
         <div class="judge-toggle" data-judge="${judge.judge_name}">
-            ${judge.judge_title}
+            <img src="/static/images/${judge.judge_name}.jpg" alt="${judge.judge_title}" onerror="this.style.display='none'">
+            <span>${judge.judge_title}</span>
         </div>
     `).join('');
 

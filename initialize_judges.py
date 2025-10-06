@@ -10,6 +10,17 @@ import glob
 from openai import OpenAI
 from typing import Dict, List
 
+# Load environment variables from .env file manually
+if os.path.exists('.env'):
+    with open('.env', 'r') as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith('#') and '=' in line:
+                key, value = line.split('=', 1)
+                # Remove quotes if present
+                value = value.strip().strip("'").strip('"')
+                os.environ[key] = value
+
 # Initialize OpenAI client
 client = OpenAI()
 
