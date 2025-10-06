@@ -2,6 +2,7 @@
 Flask web server for AI Supreme Court application.
 """
 
+import os
 import json
 import time
 import sqlite3
@@ -40,7 +41,10 @@ def init_db():
     conn.commit()
     conn.close()
 
-init_db()
+# if queries.db file does not exist, call init_db
+if not os.path.exists('queries.db'):
+    init_db()
+
 
 
 def load_judge_assistants() -> Dict[str, Dict]:
