@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Supreme Court</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏛️ AI Supreme Court</h1>
+            <p class="subtitle">Ask your questions to AI-powered Supreme Court Justices</p>
+        </header>
+
+        <main>
+            <section class="question-section">
+                <label for="question">Your Question</label>
+                <textarea
+                    id="question"
+                    placeholder="Enter your legal question here..."
+                    rows="4"
+                ></textarea>
+            </section>
+
+            <section class="judges-section">
+                <div class="judges-header">
+                    <h2>Select Justices</h2>
+                    <button id="select-all" class="toggle-btn">Select All</button>
+                </div>
+                <div id="judges-grid" class="judges-grid">
+                    <!-- Judges will be loaded here -->
+                </div>
+            </section>
+
+            <div class="submit-section">
+                <button id="ask-button" class="ask-button">
+                    Ask the AI Supreme Court
+                </button>
+                <div id="loading" class="loading" style="display: none;">
+                    <div class="spinner"></div>
+                    <span>Consulting the Justices...</span>
+                </div>
+            </div>
+
+            <section id="responses-section" class="responses-section" style="display: none;">
+                <h2>Judicial Responses</h2>
+                <div id="responses-container" class="responses-container">
+                    <!-- Responses will appear here -->
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <div id="query-status" class="query-status">
+                <span id="queries-remaining">Loading...</span>
+            </div>
+        </footer>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
