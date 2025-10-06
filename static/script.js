@@ -172,7 +172,34 @@ askButton.addEventListener('click', async () => {
 // Display responses
 function displayResponses(data) {
     responsesSection.style.display = 'block';
-    responsesContainer.innerHTML = data.responses.map((response, index) => `
+
+    // Calculate vote summary
+    const voteCounts = {
+        strongly_support: 0,
+        support: 0,
+        neutral: 0,
+        oppose: 0,
+        strongly_oppose: 0
+    };
+
+    data.responses.forEach(response => {
+        if (voteCounts.hasOwnProperty(response.support_level)) {
+            voteCounts[response.support_level]++;
+        }
+    });
+
+    // Create vote summary HTML
+    const voteSummary = `
+        <div class="vote-summary">
+            ${voteCounts.strongly_support > 0 ? `<div class="vote-badge strongly-support"><span class="vote-count">${voteCounts.strongly_support}</span> Strongly Support</div>` : ''}
+            ${voteCounts.support > 0 ? `<div class="vote-badge support"><span class="vote-count">${voteCounts.support}</span> Support</div>` : ''}
+            ${voteCounts.neutral > 0 ? `<div class="vote-badge neutral"><span class="vote-count">${voteCounts.neutral}</span> Neutral</div>` : ''}
+            ${voteCounts.oppose > 0 ? `<div class="vote-badge oppose"><span class="vote-count">${voteCounts.oppose}</span> Oppose</div>` : ''}
+            ${voteCounts.strongly_oppose > 0 ? `<div class="vote-badge strongly-oppose"><span class="vote-count">${voteCounts.strongly_oppose}</span> Strongly Oppose</div>` : ''}
+        </div>
+    `;
+
+    responsesContainer.innerHTML = voteSummary + data.responses.map((response, index) => `
         <div class="response-card" data-support="${response.support_level}" data-index="${index}">
             <div class="response-header">
                 <div class="judge-info">
