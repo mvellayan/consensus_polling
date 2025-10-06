@@ -1,0 +1,205 @@
+"""
+Initialize 9 Supreme Court Judge AI Agents using OpenAI Assistants API (FIXED VERSION).
+
+This version properly uses the Assistants API with file uploads.
+"""
+
+import os
+import json
+import glob
+from openai import OpenAI
+from typing import Dict, List
+
+# Initialize OpenAI client
+client = OpenAI()
+
+# List of all 9 current Supreme Court justices
+JUDGES = [
+    "alito",
+    "barrett",
+    "gorsuch",
+    "jackson",
+    "kagan",
+    "kavanaugh",
+    "roberts",
+    "sotomayor",
+    "thomas"
+]
+
+
+def load_judge_documents(judge_name: str) -> Dict[str, List[Dict]]:
+    """Load all case documents for a specific judge."""
+    scotus_dir = "scotus"
+
+    # Find all opinion files for this judge
+    opinion_files = glob.glob(f"{scotus_dir}/*_{judge_name}_*.json")
+    opinions = []
+
+    for file_path in opinion_files:
+        with open(file_path, 'r') as f:
+            data = json.load(f)
+            opinions.append({
+                'file': os.path.basename(file_path),
+                'case_number': data.get('case_number', ''),
+                'opinion_type': data.get('opinion_type', ''),
+                'text': data.get('text', '')
+            })
+
+    # Find all unique case numbers for this judge
+    case_numbers = set()
+    for opinion in opinions:
+        if opinion['case_number']:
+            case_numbers.add(opinion['case_number'])
+
+    # Load syllabi for these cases
+    syllabi = []
+    for case_num in case_numbers:
+        syllabus_file = f"{scotus_dir}/{case_num}_syllabus.json"
+        if os.path.exists(syllabus_file):
+            with open(syllabus_file, 'r') as f:
+                data = json.load(f)
+                syllabi.append({
+                    'case_number': case_num,
+                    'syllabus': data.get('syllabus', '')
+                })
+
+    return {
+        'opinions': opinions,
+        'syllabi': syllabi
+    }
+
+
+def create_judge_instructions(judge_name: str) -> str:
+    """Create concise instructions for the assistant."""
+    return f"""You are Justice {judge_name.title()} of the United States Supreme Court.
+
+ROLE:
+- Respond to legal questions from Justice {judge_name.title()}'s perspective
+- Use the judicial philosophy and reasoning patterns from your written opinions
+- Apply the same interpretive methods and analytical framework you demonstrate in your cases
+
+INSTRUCTIONS:
+1. Base responses on principles shown in your opinions
+2. Cite specific cases or reasoning when relevant
+3. Maintain consistency with your demonstrated judicial philosophy
+4. Be thoughtful, analytical, and grounded in legal reasoning
+5. If the question is outside your opinion coverage, extrapolate based on your established interpretive approach
+
+You embody Justice {judge_name.title()}'s judicial reasoning style."""
+
+
+def create_knowledge_document(judge_name: str, documents: Dict) -> str:
+    """Create a comprehensive knowledge document with all opinions."""
+    content = f"# Justice {judge_name.title()} - Judicial Opinions and Case Context\n\n"
+
+    # Add case syllabi
+    content += "## Case Summaries\n\n"
+    for syllabus in documents['syllabi']:
+        content += f"### Case {syllabus['case_number']}\n\n"
+        content += f"{syllabus['syllabus']}\n\n"
+        content += "---\n\n"
+
+    # Add opinions
+    content += "## Written Opinions\n\n"
+    for opinion in documents['opinions']:
+        content += f"### Case {opinion['case_number']} - {opinion['opinion_type'].upper()}\n\n"
+        content += f"{opinion['text']}\n\n"
+        content += "---\n\n"
+
+    return content
+
+
+def initialize_judge_assistant(judge_name: str) -> Dict:
+    """Create an OpenAI Assistant for a judge."""
+    print(f"Initializing {judge_name.title()}...")
+
+    # Load documents
+    documents = load_judge_documents(judge_name)
+    print(f"  - Loaded {len(documents['opinions'])} opinions")
+    print(f"  - Loaded {len(documents['syllabi'])} case syllabi")
+
+    # Create knowledge document
+    knowledge_content = create_knowledge_document(judge_name, documents)
+
+    # Save to temporary file
+    temp_file = f"temp_{judge_name}_knowledge.txt"
+    with open(temp_file, 'w') as f:
+        f.write(knowledge_content)
+
+    file_size_mb = os.path.getsize(temp_file) / (1024 * 1024)
+    print(f"  - Created knowledge document ({file_size_mb:.2f} MB)")
+
+    # Upload file to OpenAI
+    with open(temp_file, 'rb') as f:
+        file_obj = client.files.create(file=f, purpose='assistants')
+
+    print(f"  - Uploaded to OpenAI (file_id: {file_obj.id})")
+
+    # Create assistant with file search
+    assistant = client.beta.assistants.create(
+        name=f"Justice {judge_name.title()}",
+        instructions=create_judge_instructions(judge_name),
+        model="gpt-4o-mini",
+        tools=[{"type": "file_search"}],
+        tool_resources={
+            "file_search": {
+                "vector_stores": [{
+                    "file_ids": [file_obj.id]
+                }]
+            }
+        }
+    )
+
+    # Create a thread
+    thread = client.beta.threads.create()
+
+    # Clean up temp file
+    os.remove(temp_file)
+
+    print(f"  ✓ Successfully initialized {judge_name.title()}")
+    print(f"    Assistant ID: {assistant.id}")
+    print(f"    Thread ID: {thread.id}")
+    print()
+
+    return {
+        'judge_name': judge_name,
+        'judge_title': f"Justice {judge_name.title()}",
+        'assistant_id': assistant.id,
+        'thread_id': thread.id,
+        'file_id': file_obj.id,
+        'num_opinions': len(documents['opinions']),
+        'num_cases': len(documents['syllabi'])
+    }
+
+
+def main():
+    """Initialize all 9 judge assistants."""
+    print("=" * 60)
+    print("Initializing Supreme Court Judge AI Assistants (FIXED)")
+    print("=" * 60)
+    print()
+
+    judge_assistants = []
+
+    for judge in JUDGES:
+        try:
+            judge_info = initialize_judge_assistant(judge)
+            judge_assistants.append(judge_info)
+        except Exception as e:
+            print(f"  ✗ Error initializing {judge}: {str(e)}")
+            print()
+
+    # Save assistant information
+    output_file = "judge_assistants.json"
+    with open(output_file, 'w') as f:
+        json.dump(judge_assistants, f, indent=2)
+
+    print("=" * 60)
+    print(f"Initialization complete!")
+    print(f"Assistant information saved to: {output_file}")
+    print(f"Total judges initialized: {len(judge_assistants)}/9")
+    print("=" * 60)
+
+
+if __name__ == "__main__":
+    main()

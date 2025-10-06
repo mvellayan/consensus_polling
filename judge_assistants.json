@@ -1,0 +1,83 @@
+[
+  {
+    "judge_name": "alito",
+    "judge_title": "Justice Alito",
+    "assistant_id": "asst_v030aJVkK2Qbm4FleL8qXcYh",
+    "thread_id": "thread_gWmglD2L588WS80FyJJSkoK4",
+    "file_id": "file-QUveDpG3vPquXn6UuajFao",
+    "num_opinions": 25,
+    "num_cases": 25
+  },
+  {
+    "judge_name": "barrett",
+    "judge_title": "Justice Barrett",
+    "assistant_id": "asst_P1G3oxc9BntT5ntnoFFxIHW1",
+    "thread_id": "thread_0mJXZdwxAaP4QmAPrugdEWuD",
+    "file_id": "file-6rmz5PKngHueSjhV8SEYyW",
+    "num_opinions": 22,
+    "num_cases": 22
+  },
+  {
+    "judge_name": "gorsuch",
+    "judge_title": "Justice Gorsuch",
+    "assistant_id": "asst_5MG8c0kdKwRsSB7LBZWsCRo3",
+    "thread_id": "thread_XgrHtlpkXetgWzEPI9djJxa9",
+    "file_id": "file-LMJcncCMrZGC7VvoXqGXAT",
+    "num_opinions": 32,
+    "num_cases": 32
+  },
+  {
+    "judge_name": "jackson",
+    "judge_title": "Justice Jackson",
+    "assistant_id": "asst_A7DLeQWK2wzFKmidgqfSRjWZ",
+    "thread_id": "thread_RwCEIzWGxI13ng866ouDtPIa",
+    "file_id": "file-EYEvtb36v9fEZq51ThUGLb",
+    "num_opinions": 40,
+    "num_cases": 40
+  },
+  {
+    "judge_name": "kagan",
+    "judge_title": "Justice Kagan",
+    "assistant_id": "asst_K8rZ66BRJKWGmqREp6SXeH4j",
+    "thread_id": "thread_zqNsT2SikBtBMbeY75rEEfSW",
+    "file_id": "file-Xf9CsMUiL3BxTt3xPsNG2K",
+    "num_opinions": 15,
+    "num_cases": 15
+  },
+  {
+    "judge_name": "kavanaugh",
+    "judge_title": "Justice Kavanaugh",
+    "assistant_id": "asst_hexSShqo2Wd2DcaSzNu0OJam",
+    "thread_id": "thread_u0FEpcehr5fmiVezaYfwqQLH",
+    "file_id": "file-NohUUf5WVA36FAqem5u6eW",
+    "num_opinions": 24,
+    "num_cases": 24
+  },
+  {
+    "judge_name": "roberts",
+    "judge_title": "Justice Roberts",
+    "assistant_id": "asst_AT7BQrdQKwF1xVxhxgHZeknu",
+    "thread_id": "thread_fpoJEg6matyOlUxjM9oiRRyC",
+    "file_id": "file-63KnvKjRwRQ4GyHvGBemp4",
+    "num_opinions": 15,
+    "num_cases": 15
+  },
+  {
+    "judge_name": "sotomayor",
+    "judge_title": "Justice Sotomayor",
+    "assistant_id": "asst_42t25Xwv76VkLuBFQEtIxbHL",
+    "thread_id": "thread_JZGeSTVTRJ3XGxnDANcDELOi",
+    "file_id": "file-FpR7zmLrTBimxCZ4MK4Es6",
+    "num_opinions": 33,
+    "num_cases": 33
+  },
+  {
+    "judge_name": "thomas",
+    "judge_title": "Justice Thomas",
+    "assistant_id": "asst_2DwBN3RXef9lCmcDXDkyLWzq",
+    "thread_id": "thread_Zfvpz2Rdketgbduo0GDOMWuP",
+    "file_id": "file-Mzrxar1PfG7oychdEcpBoc",
+    "num_opinions": 45,
+    "num_cases": 45
+  }
+]

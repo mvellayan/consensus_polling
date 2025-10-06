@@ -1,0 +1,65 @@
+[
+  {
+    "judge_name": "alito",
+    "judge_title": "Justice Alito",
+    "thread_id": "thread_vjbhPHgCJgItza4f6Kl8ABDF",
+    "num_opinions": 25,
+    "num_cases": 25
+  },
+  {
+    "judge_name": "barrett",
+    "judge_title": "Justice Barrett",
+    "thread_id": "thread_1kmFcjvJK6LmH7L9gEqfReUG",
+    "num_opinions": 22,
+    "num_cases": 22
+  },
+  {
+    "judge_name": "gorsuch",
+    "judge_title": "Justice Gorsuch",
+    "thread_id": "thread_sK3uoTSzNhmiwB1FznLhwrkR",
+    "num_opinions": 32,
+    "num_cases": 32
+  },
+  {
+    "judge_name": "jackson",
+    "judge_title": "Justice Jackson",
+    "thread_id": "thread_oUkPCnEt1UypVP8zzLSfuSjQ",
+    "num_opinions": 40,
+    "num_cases": 40
+  },
+  {
+    "judge_name": "kagan",
+    "judge_title": "Justice Kagan",
+    "thread_id": "thread_PoyRPLiWx2XA29RegjfycL8k",
+    "num_opinions": 15,
+    "num_cases": 15
+  },
+  {
+    "judge_name": "kavanaugh",
+    "judge_title": "Justice Kavanaugh",
+    "thread_id": "thread_Y2OGoG1O2mL6U2KHCqgojfMN",
+    "num_opinions": 24,
+    "num_cases": 24
+  },
+  {
+    "judge_name": "roberts",
+    "judge_title": "Justice Roberts",
+    "thread_id": "thread_sm5hcxJpaSqqZz4rBOlqutfD",
+    "num_opinions": 15,
+    "num_cases": 15
+  },
+  {
+    "judge_name": "sotomayor",
+    "judge_title": "Justice Sotomayor",
+    "thread_id": "thread_lppM5Dud7eb5lR0QK13slzHi",
+    "num_opinions": 33,
+    "num_cases": 33
+  },
+  {
+    "judge_name": "thomas",
+    "judge_title": "Justice Thomas",
+    "thread_id": "thread_w37Q5r7yrkU0g91rtzy2Lrk6",
+    "num_opinions": 45,
+    "num_cases": 45
+  }
+]
