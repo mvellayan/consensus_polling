@@ -277,6 +277,7 @@ aws ecs create-service \
   --desired-count 1 \
   --launch-type FARGATE \
   --network-configuration "awsvpcConfiguration={subnets=[${SUBNET_1},${SUBNET_2}],securityGroups=[${SG_ID}],assignPublicIp=ENABLED}" \
+  --enable-execute-command \
   --region ${REGION} 2>/dev/null || echo "Service already exists, updating..."
 
 # Update service if it already exists
