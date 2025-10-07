@@ -13,6 +13,11 @@
             <p class="subtitle">Ask your questions to AI-powered Supreme Court Justices</p>
         </header>
 
+        <!-- Status bar moved here -->
+        <div id="query-status" class="query-status">
+            <span id="queries-remaining">Loading...</span>
+        </div>
+
         <main>
             <section class="question-section">
                 <label for="question">Your Question</label>
@@ -40,7 +45,7 @@
                 <div id="loading" class="loading" style="display: none;">
                     <div class="loading-header">
                         <div class="spinner"></div>
-                        <span>Please wait. This could take 1+ minute.</span>
+                        <span>Please wait. Response takes 5-20 seconds/judge.</span>
                     </div>
                     <div class="disclaimer">
                         <strong>Disclaimer:</strong> This AI simulation is for educational and research use only and does not represent real views or advice from any Justice or institution. All outputs are fictional and should not be relied upon for legal or factual purposes. By using this site, you accept full responsibility for your use and agree to indemnify and hold the creator harmless from any claims or consequences arising from it.
@@ -57,9 +62,7 @@
         </main>
 
         <footer>
-            <div id="query-status" class="query-status">
-                <span id="queries-remaining">Loading...</span>
-            </div>
+            <!-- Status bar moved to top -->
         </footer>
     </div>
 

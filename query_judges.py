@@ -8,8 +8,13 @@ import json
 import time
 from openai import OpenAI
 from typing import List, Dict
+from dotenv import load_dotenv
+from pathlib import Path
 
-# Initialize OpenAI client
+# Load .env from the same directory as this script
+env_path = Path(__file__).parent / '.env'
+load_dotenv(dotenv_path=env_path)
+
 client = OpenAI()
 
 

@@ -6,13 +6,40 @@ import os
 import json
 import time
 import sqlite3
+import threading
+import uuid
 from datetime import datetime
 from flask import Flask, render_template, request, jsonify
 from openai import OpenAI
 from typing import List, Dict
+import boto3
+
+dynamodb = boto3.resource('dynamodb')
+
+# Progress tracking storage
+job_progress = {}
+
+# Progress tracking storage
+job_progress = {}
+
+try:
+    from dotenv import load_dotenv
+    from pathlib import Path
+    # Load .env from the same directory as this script
+    env_path = Path(__file__).parent / '.env'
+    if env_path.exists():
+        load_dotenv(dotenv_path=env_path)
+except ImportError:
+    pass  # python-dotenv not available in production
 
 app = Flask(__name__)
-client = OpenAI()
+
+# Initialize OpenAI client with error handling
+try:
+    client = OpenAI()
+except Exception as e:
+    print(f"Error initializing OpenAI client: {e}")
+    client = None
 
 # Database initialization
 def init_db():
@@ -76,10 +103,16 @@ def log_query(ip_address: str, question: str) -> int:
     query_id = c.lastrowid
     conn.commit()
     conn.close()
+    table = dynamodb.Table('scotus_queries')
+    table.put_item(Item={
+        'ipaddress_timestamp': f"{ip_address}_{datetime.now().strftime('%Y%m%d_%H%M%S%f')}",
+        'ip_address': ip_address,
+        'question': question
+    })
     return query_id
 
 
-def log_response(query_id: int, judge_name: str, judge_title: str, response: str, support_level: str):
+def log_response(ip_address: str, query_id: int, judge_name: str, judge_title: str, response: str, support_level: str):
     """Log a judge's response."""
     conn = sqlite3.connect('queries.db')
     c = conn.cursor()
@@ -89,10 +122,23 @@ def log_response(query_id: int, judge_name: str, judge_title: str, response: str
     ''', (query_id, judge_name, judge_title, response, support_level))
     conn.commit()
     conn.close()
+    table = dynamodb.Table('scotus_responses')
+    table.put_item(Item={
+        'ipaddress_timestamp': f"{ip_address}_{datetime.now().strftime('%Y%m%d_%H%M%S%f')}",
+        'ip_address': ip_address,
+        'judge_name': judge_name,
+        'judge_title': judge_title,
+        'response': response,
+        'support_level': support_level
+    })
+
 
 
 def analyze_support_level(response: str) -> str:
     """Analyze the response to determine support level using OpenAI."""
+    if not client:
+        return 'neutral'
+    
     try:
         analysis = client.chat.completions.create(
             model="gpt-4o-mini",
@@ -107,52 +153,59 @@ def analyze_support_level(response: str) -> str:
         if level in ['strongly_support', 'support', 'neutral', 'oppose', 'strongly_oppose']:
             return level
         return 'neutral'
-    except:
+    except Exception as e:
+        print(f"Error analyzing support level: {e}")
         return 'neutral'
 
 
 def query_judge(judge_name: str, assistant_id: str, thread_id: str, question: str) -> str:
     """Send a question to a specific judge and get their response."""
-    # Add the user's question to the thread
-    client.beta.threads.messages.create(
-        thread_id=thread_id,
-        role="user",
-        content=question
-    )
-
-    # Create a run with the assistant
-    run = client.beta.threads.runs.create(
-        thread_id=thread_id,
-        assistant_id=assistant_id
-    )
-
-    # Wait for the run to complete
-    while run.status in ['queued', 'in_progress', 'requires_action']:
-        time.sleep(1)
-        run = client.beta.threads.runs.retrieve(
+    if not client:
+        return "Error: OpenAI client not initialized"
+    
+    try:
+        # Add the user's question to the thread
+        client.beta.threads.messages.create(
             thread_id=thread_id,
-            run_id=run.id
+            role="user",
+            content=question
         )
 
-    if run.status == 'completed':
-        # Get the assistant's messages
-        messages = client.beta.threads.messages.list(
+        # Create a run with the assistant
+        run = client.beta.threads.runs.create(
             thread_id=thread_id,
-            order='desc',
-            limit=1
+            assistant_id=assistant_id
         )
 
-        # Extract the response
-        if messages.data:
-            response_message = messages.data[0]
-            if response_message.content:
-                text_parts = []
-                for content in response_message.content:
-                    if hasattr(content, 'text'):
-                        text_parts.append(content.text.value)
-                return '\n'.join(text_parts)
+        # Wait for the run to complete
+        while run.status in ['queued', 'in_progress', 'requires_action']:
+            time.sleep(1)
+            run = client.beta.threads.runs.retrieve(
+                thread_id=thread_id,
+                run_id=run.id
+            )
 
-    return f"Error: Run status was {run.status}"
+        if run.status == 'completed':
+            # Get the assistant's messages
+            messages = client.beta.threads.messages.list(
+                thread_id=thread_id,
+                order='desc',
+                limit=1
+            )
+
+            # Extract the response
+            if messages.data:
+                response_message = messages.data[0]
+                if response_message.content:
+                    text_parts = []
+                    for content in response_message.content:
+                        if hasattr(content, 'text'):
+                            text_parts.append(content.text.value)
+                    return '\n'.join(text_parts)
+
+        return f"Error: Run status was {run.status}"
+    except Exception as e:
+        return f"Error querying judge: {str(e)}"
 
 
 @app.route('/health')
@@ -226,19 +279,83 @@ def query_judges():
     if get_ip_query_count(ip_address) >= 5:
         return jsonify({'error': 'Query limit reached. Maximum 5 queries per IP address.'}), 429
 
-    # Log the query
+    # For single judge, process immediately
+    if len(judge_names) == 1:
+        query_id = log_query(ip_address, question)
+        judge_assistants = load_judge_assistants()
+        responses = []
+
+        judge_name = judge_names[0]
+        if judge_name in judge_assistants:
+            judge_info = judge_assistants[judge_name]
+            try:
+                response = query_judge(
+                    judge_name=judge_name,
+                    assistant_id=judge_info['assistant_id'],
+                    thread_id=judge_info['thread_id'],
+                    question=question
+                )
+                support_level = analyze_support_level(response)
+                brief = response[:150] + '...' if len(response) > 150 else response
+                log_response(ip_address, query_id, judge_name, judge_info['judge_title'], response, support_level)
+                
+                responses.append({
+                    'judge_name': judge_name,
+                    'judge_title': judge_info['judge_title'],
+                    'brief': brief,
+                    'full_response': response,
+                    'support_level': support_level
+                })
+            except Exception as e:
+                responses.append({
+                    'judge_name': judge_name,
+                    'judge_title': judge_info['judge_title'],
+                    'brief': f'Error: {str(e)}',
+                    'full_response': f'Error: {str(e)}',
+                    'support_level': 'neutral'
+                })
+
+        return jsonify({
+            'question': question,
+            'responses': responses
+        })
+
+    # For multiple judges, start async processing
+    job_id = str(uuid.uuid4())
+    job_progress[job_id] = {
+        'status': 'processing',
+        'total': len(judge_names),
+        'completed': 0,
+        'responses': [],
+        'question': question
+    }
+
+    # Start background processing
+    thread = threading.Thread(target=process_judges_async, args=(job_id, question, judge_names, ip_address))
+    thread.daemon = True
+    thread.start()
+
+    return jsonify({'job_id': job_id})
+
+@app.route('/api/progress/<job_id>', methods=['GET'])
+def get_progress(job_id):
+    """Get progress of a judge query job."""
+    if job_id not in job_progress:
+        return jsonify({'error': 'Job not found'}), 404
+    
+    return jsonify(job_progress[job_id])
+
+def process_judges_async(job_id, question, judge_names, ip_address):
+    """Process judges asynchronously with progress updates."""
     query_id = log_query(ip_address, question)
-
-    # Query judges
     judge_assistants = load_judge_assistants()
-    responses = []
-
-    for judge_name in judge_names:
+    
+    for i, judge_name in enumerate(judge_names):
         if judge_name not in judge_assistants:
+            job_progress[job_id]['completed'] = i + 1
             continue
 
         judge_info = judge_assistants[judge_name]
-
         try:
             response = query_judge(
                 judge_name=judge_name,
@@ -246,38 +363,32 @@ def query_judges():
                 thread_id=judge_info['thread_id'],
                 question=question
             )
-
-            # Analyze support level
             support_level = analyze_support_level(response)
-
-            # Create brief summary (first 150 chars)
             brief = response[:150] + '...' if len(response) > 150 else response
-
-            # Log the response
-            log_response(query_id, judge_name, judge_info['judge_title'], response, support_level)
-
-            responses.append({
+            log_response(ip_address, query_id, judge_name, judge_info['judge_title'], response, support_level)
+            
+            job_progress[job_id]['responses'].append({
                 'judge_name': judge_name,
                 'judge_title': judge_info['judge_title'],
                 'brief': brief,
                 'full_response': response,
                 'support_level': support_level
             })
-
         except Exception as e:
-            responses.append({
+            job_progress[job_id]['responses'].append({
                 'judge_name': judge_name,
                 'judge_title': judge_info['judge_title'],
                 'brief': f'Error: {str(e)}',
                 'full_response': f'Error: {str(e)}',
                 'support_level': 'neutral'
             })
-
-    return jsonify({
-        'question': question,
-        'responses': responses
-    })
+        
+        job_progress[job_id]['completed'] = i + 1
+    
+    job_progress[job_id]['status'] = 'completed'
 
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    import os
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)

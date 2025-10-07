@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+*.pyc
+.git/
+.gitignore
+.DS_Store
+.idea/
+.claude/
+*.md
+requirements_full_backup.txt
+requirements_minimal.txt
+deploy_fargate.sh
+cleanup_fargate.sh
+error.txt
+.env

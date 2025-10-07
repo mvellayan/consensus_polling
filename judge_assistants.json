@@ -2,82 +2,82 @@
   {
     "judge_name": "alito",
     "judge_title": "Justice Alito",
-    "assistant_id": "asst_4Wb4BQhIN3873lbaXgCEI4Nu",
-    "thread_id": "thread_UkQsly2TSa37AmiRfAlRZ7Fc",
-    "file_id": "file-LndDfQYutmgxCba9DYfFia",
-    "num_opinions": 25,
-    "num_cases": 25
+    "assistant_id": "asst_PYN66Mid9XZ8nwzj9CNDLHnn",
+    "thread_id": "thread_49f97ORDLTnNUidBhDh7mY9R",
+    "file_id": "file-FyQG8TG5KkHi3SEki9sDHC",
+    "num_opinions": 38,
+    "num_cases": 38
   },
   {
     "judge_name": "barrett",
     "judge_title": "Justice Barrett",
-    "assistant_id": "asst_EdbWNI5LqlAFNgCYlTqHZEYr",
-    "thread_id": "thread_VJzo52VCJS0fzpgsoQdXGW9E",
-    "file_id": "file-NGGXc4qqYk59v7DPFGVNZn",
-    "num_opinions": 22,
-    "num_cases": 22
+    "assistant_id": "asst_0yISYYyQzEjB4dtimUx6GDSc",
+    "thread_id": "thread_hezZtgdoZHlmBoCOdy75hdk2",
+    "file_id": "file-2mE55Tv8PHDcdBwtunVLKz",
+    "num_opinions": 36,
+    "num_cases": 36
   },
   {
     "judge_name": "gorsuch",
     "judge_title": "Justice Gorsuch",
-    "assistant_id": "asst_WwkNZMak7EfqP57zKNahXj1W",
-    "thread_id": "thread_r9NRi7LxzRQZErjZtFVlAJYM",
-    "file_id": "file-KpUBQhWT4aGJmRxRi9dmLn",
-    "num_opinions": 32,
-    "num_cases": 32
+    "assistant_id": "asst_OTFsu3EWoa92UdLGbBcsqd2k",
+    "thread_id": "thread_y4wlFfleASHtLkzNf0Sw9lCB",
+    "file_id": "file-3praMEUJwyt2XCLiSb5ehT",
+    "num_opinions": 51,
+    "num_cases": 51
   },
   {
     "judge_name": "jackson",
     "judge_title": "Justice Jackson",
-    "assistant_id": "asst_GZss1a8PKMD5aVp0yTO2CRV3",
-    "thread_id": "thread_pkWV85YT8ivvDMAfXdjzXVK8",
-    "file_id": "file-JYnLbLnWRYsCQ42w1E3XRS",
-    "num_opinions": 40,
-    "num_cases": 40
+    "assistant_id": "asst_euTJdECELfWxPyVbwKLVgDmx",
+    "thread_id": "thread_3PUpM9CkOdnCsPACVviYrNmn",
+    "file_id": "file-1yZWK3VEZLAcKsSzWhwFrC",
+    "num_opinions": 54,
+    "num_cases": 54
   },
   {
     "judge_name": "kagan",
     "judge_title": "Justice Kagan",
-    "assistant_id": "asst_FJ6nbfePNk3lE2iJ4UNgeG3R",
-    "thread_id": "thread_PVuCfyN8EjLBkXbwXtFvCrIp",
-    "file_id": "file-9TavncrKemuSHDvmzvkm5E",
-    "num_opinions": 15,
-    "num_cases": 15
+    "assistant_id": "asst_yAroL8lz1k74rNqILukzGHo0",
+    "thread_id": "thread_asLHOqhTbe94AeWhKmuUqD7d",
+    "file_id": "file-WehvXno5BANG7KTY8wKtVx",
+    "num_opinions": 25,
+    "num_cases": 25
   },
   {
     "judge_name": "kavanaugh",
     "judge_title": "Justice Kavanaugh",
-    "assistant_id": "asst_3YVJqtAZLGjTPYbxq4FfOGki",
-    "thread_id": "thread_XVK3CFFXf00w37NACWPrsBCz",
-    "file_id": "file-VaAWHtUsc4J56v9tXtCeNZ",
-    "num_opinions": 24,
-    "num_cases": 24
+    "assistant_id": "asst_8PLzkyvEIrKys1AMFLYwq7Uq",
+    "thread_id": "thread_SGP8RpCCtMQStrFYJCjRRTWY",
+    "file_id": "file-Fdxs39JDtFWhyBCjuQhwmW",
+    "num_opinions": 37,
+    "num_cases": 37
   },
   {
     "judge_name": "roberts",
     "judge_title": "Justice Roberts",
-    "assistant_id": "asst_DtLYTpOKnn1bN8h4yz6kU8QD",
-    "thread_id": "thread_1yD6JyOYkVN1bOxQaWFYrtky",
-    "file_id": "file-Sq1qTedSpVWWpEG62fR2NG",
-    "num_opinions": 15,
-    "num_cases": 15
+    "assistant_id": "asst_3tVhOiNs7Ry47u3Jm16fUsx3",
+    "thread_id": "thread_uvy2h7fzFatfBkaXPjbWc2He",
+    "file_id": "file-1StmYu9xRintJ6D63hnoNY",
+    "num_opinions": 21,
+    "num_cases": 21
   },
   {
     "judge_name": "sotomayor",
     "judge_title": "Justice Sotomayor",
-    "assistant_id": "asst_5DA0sGK8FmI4FzwIekiXsU8a",
-    "thread_id": "thread_V3o4rJEx0xhR86pNxsjMKKgC",
-    "file_id": "file-QeXKWKkkFQNRyW2t6giq5m",
-    "num_opinions": 33,
-    "num_cases": 33
+    "assistant_id": "asst_g98vhbzIpglx1GcNc1JywpNU",
+    "thread_id": "thread_UlBV0XzwLyXNHmQav9sHMuUa",
+    "file_id": "file-M1dxH9J7knLZpz4vhd43XG",
+    "num_opinions": 47,
+    "num_cases": 47
   },
   {
     "judge_name": "thomas",
     "judge_title": "Justice Thomas",
-    "assistant_id": "asst_t2LWBeDdjXHMGZZ4ulJWJuhE",
-    "thread_id": "thread_0KF3x42blWDoK7RpIrdeLUEx",
-    "file_id": "file-3asvB779E8dahEEAKdJNNP",
-    "num_opinions": 45,
-    "num_cases": 45
+    "assistant_id": "asst_DrRWFAxJ61PvGG48p30GNTr9",
+    "thread_id": "thread_FzMgI9xgHspGVFzBlh9Hh7Si",
+    "file_id": "file-1UpEp2Ru6WwKotbzK22eBX",
+    "num_opinions": 63,
+    "num_cases": 63
   }
 ]

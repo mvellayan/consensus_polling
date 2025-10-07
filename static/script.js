@@ -1,23 +1,54 @@
-// State management
 let judges = [];
 let selectedJudges = new Set();
 let queriesRemaining = 5;
 
-// DOM elements
-const questionInput = document.getElementById('question');
-const judgesGrid = document.getElementById('judges-grid');
-const selectAllBtn = document.getElementById('select-all');
-const askButton = document.getElementById('ask-button');
-const loading = document.getElementById('loading');
-const responsesSection = document.getElementById('responses-section');
-const responsesContainer = document.getElementById('responses-container');
-const queriesRemainingSpan = document.getElementById('queries-remaining');
+// DOM elements - will be found after DOM loads
+let judgesGrid, questionInput, askButton, loading, responsesSection, responsesContainer, queryStatus, selectAllButton;
 
-// Initialize
-async function init() {
+// Initialize the application
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('DOM loaded');
+    
+    // Find all DOM elements after DOM is loaded
+    judgesGrid = document.getElementById('judges-grid');
+    questionInput = document.getElementById('question');
+    askButton = document.getElementById('ask-button');
+    loading = document.getElementById('loading');
+    responsesSection = document.getElementById('responses-section');
+    responsesContainer = document.getElementById('responses-container');
+    queryStatus = document.getElementById('query-status');
+    selectAllButton = document.getElementById('select-all');
+    
+    console.log('askButton:', askButton);
+    console.log('selectAllButton:', selectAllButton);
+    
     await loadJudges();
     await checkQueryLimit();
-}
+    
+    if (askButton) {
+        askButton.addEventListener('click', handleAskQuestion);
+    }
+    
+    if (questionInput) {
+        questionInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !askButton.disabled) {
+                handleAskQuestion();
+            }
+        });
+        questionInput.addEventListener('input', updateAskButton);
+    }
+    
+    // Add Select All button functionality
+    if (selectAllButton) {
+        console.log('Adding click listener to Select All button');
+        selectAllButton.addEventListener('click', () => {
+            console.log('Select All clicked');
+            toggleSelectAll();
+        });
+    } else {
+        console.error('Select All button not found');
+    }
+});
 
 // Load judges from API
 async function loadJudges() {
@@ -27,62 +58,94 @@ async function loadJudges() {
         renderJudges();
     } catch (error) {
         console.error('Error loading judges:', error);
+        showAlert('Failed to load judges', 'error');
     }
 }
 
-// Render judge toggles
+// Render judges grid
 function renderJudges() {
-    judgesGrid.innerHTML = judges.map(judge => `
-        <div class="judge-toggle" data-judge="${judge.judge_name}">
-            <img src="/static/images/${judge.judge_name}.jpg" alt="${judge.judge_title}" onerror="this.style.display='none'">
-            <span>${judge.judge_title}</span>
-        </div>
-    `).join('');
-
-    // Add click handlers
-    document.querySelectorAll('.judge-toggle').forEach(btn => {
-        btn.addEventListener('click', () => toggleJudge(btn.dataset.judge, btn));
+    judgesGrid.innerHTML = '';
+    
+    judges.forEach(judge => {
+        const judgeCard = document.createElement('div');
+        judgeCard.className = 'judge-toggle';
+        judgeCard.innerHTML = `
+            <img src="/static/images/${judge.judge_name}.jpg" alt="${judge.judge_title}" onerror="this.src='${judge.image}'">
+            <h3>${judge.judge_title}</h3>
+        `;
+        
+        judgeCard.addEventListener('click', () => {
+            if (selectedJudges.has(judge.judge_name)) {
+                selectedJudges.delete(judge.judge_name);
+                judgeCard.classList.remove('selected');
+            } else {
+                selectedJudges.add(judge.judge_name);
+                judgeCard.classList.add('selected');
+            }
+            
+            // Update Select All button text
+            if (selectedJudges.size === judges.length) {
+                if (selectAllButton) selectAllButton.textContent = 'Deselect All';
+            } else {
+                if (selectAllButton) selectAllButton.textContent = 'Select All';
+            }
+            
+            updateAskButton();
+        });
+        
+        judgesGrid.appendChild(judgeCard);
     });
 }
 
-// Toggle judge selection
-function toggleJudge(judgeName, element) {
-    if (selectedJudges.has(judgeName)) {
-        selectedJudges.delete(judgeName);
-        element.classList.remove('selected');
-    } else {
-        selectedJudges.add(judgeName);
-        element.classList.add('selected');
+// Toggle select all judges
+function toggleSelectAll() {
+    console.log('toggleSelectAll called');
+    console.log('judges:', judges);
+    console.log('selectedJudges.size:', selectedJudges.size);
+    
+    if (!judges || judges.length === 0) {
+        console.log('No judges available');
+        return;
     }
-    updateSelectAllButton();
+    
+    const allSelected = selectedJudges.size === judges.length;
+    console.log('allSelected:', allSelected);
+    
+    if (allSelected) {
+        // Deselect all
+        console.log('Deselecting all');
+        selectedJudges.clear();
+        document.querySelectorAll('.judge-toggle').forEach(card => {
+            card.classList.remove('selected');
+        });
+        if (selectAllButton) selectAllButton.textContent = 'Select All';
+    } else {
+        // Select all
+        console.log('Selecting all');
+        selectedJudges.clear();
+        judges.forEach(judge => {
+            selectedJudges.add(judge.judge_name);
+        });
+        document.querySelectorAll('.judge-toggle').forEach(card => {
+            card.classList.add('selected');
+        });
+        if (selectAllButton) selectAllButton.textContent = 'Deselect All';
+    }
+    
+    console.log('selectedJudges after toggle:', selectedJudges);
+    updateAskButton();
 }
 
-// Select/deselect all judges
-selectAllBtn.addEventListener('click', () => {
-    const allSelected = selectedJudges.size === judges.length;
-
-    if (allSelected) {
-        selectedJudges.clear();
-        document.querySelectorAll('.judge-toggle').forEach(btn => {
-            btn.classList.remove('selected');
-        });
-        selectAllBtn.textContent = 'Select All';
-    } else {
-        judges.forEach(judge => selectedJudges.add(judge.judge_name));
-        document.querySelectorAll('.judge-toggle').forEach(btn => {
-            btn.classList.add('selected');
-        });
-        selectAllBtn.textContent = 'Deselect All';
-    }
-});
-
-// Update select all button text
-function updateSelectAllButton() {
-    if (selectedJudges.size === judges.length) {
-        selectAllBtn.textContent = 'Deselect All';
-    } else {
-        selectAllBtn.textContent = 'Select All';
-    }
+// Update ask button state
+function updateAskButton() {
+    if (!questionInput || !askButton) return;
+    
+    const hasQuestion = questionInput.value.trim().length > 0;
+    const hasSelectedJudges = selectedJudges.size > 0;
+    
+    // For local testing, ignore query limit
+    const shouldEnable = hasQuestion && hasSelectedJudges;
+    askButton.disabled = !shouldEnable;
 }
 
 // Check query limit
@@ -93,40 +156,50 @@ async function checkQueryLimit() {
         queriesRemaining = data.remaining;
         updateQueryStatus();
     } catch (error) {
-        console.error('Error checking limit:', error);
+        console.error('Error checking query limit:', error);
     }
 }
 
 // Update query status display
 function updateQueryStatus() {
-    queriesRemainingSpan.textContent = `${queriesRemaining} of 5 questions remaining`;
-
+    const statusElement = document.getElementById('queries-remaining');
+    if (!statusElement) return;
+    
     if (queriesRemaining === 0) {
+        statusElement.innerHTML = '<span class="limit-reached">No more queries remaining (5/5 used)</span>';
         askButton.disabled = true;
-        askButton.textContent = 'Query Limit Reached';
+    } else {
+        statusElement.innerHTML = `Queries remaining: <span class="queries-count">${queriesRemaining}/5</span>`;
     }
 }
 
-// Ask the AI Supreme Court
-askButton.addEventListener('click', async () => {
+// Show progress in status bar
+function showProgress(completed, total) {
+    const statusElement = document.getElementById('queries-remaining');
+    if (statusElement) {
+        statusElement.innerHTML = `<span class="processing">Processing judges: ${completed}/${total} completed...</span>`;
+    }
+}
+
+// Hide progress and restore query status
+function hideProgress() {
+    updateQueryStatus();
+}
+
+// Handle ask question
+async function handleAskQuestion() {
     const question = questionInput.value.trim();
-
+    
     if (!question) {
-        showAlert('Please enter a question', 'error');
+        showAlert('Please enter a question', 'warning');
         return;
     }
-
+    
     if (selectedJudges.size === 0) {
-        showAlert('Please select at least one Justice', 'error');
+        showAlert('Please select at least one Justice', 'warning');
         return;
     }
-
-    if (queriesRemaining === 0) {
-        showAlert('You have reached the maximum number of queries (5)', 'warning');
-        return;
-    }
-
-    // Show loading state
+    
     askButton.disabled = true;
     loading.style.display = 'flex';
     responsesSection.style.display = 'none';
@@ -155,93 +228,121 @@ askButton.addEventListener('click', async () => {
         }
 
         const data = await response.json();
-        displayResponses(data);
+        
+        // Check if this is async processing (multiple judges)
+        if (data.job_id) {
+            await handleAsyncProcessing(data.job_id, question);
+        } else {
+            // Single judge - immediate response
+            displayResponses(data);
+        }
 
-        // Update query count
         await checkQueryLimit();
 
     } catch (error) {
         console.error('Error querying judges:', error);
         showAlert('An error occurred while querying the Justices', 'error');
     } finally {
-        askButton.disabled = queriesRemaining === 0;
+        askButton.disabled = false;
         loading.style.display = 'none';
     }
-});
+}
+
+// Handle async processing with progress updates
+async function handleAsyncProcessing(jobId, question) {
+    // Show initial progress in status bar
+    showProgress(0, selectedJudges.size);
+
+    // Poll for progress every 5 seconds
+    const pollInterval = setInterval(async () => {
+        try {
+            const progressResponse = await fetch(`/api/progress/${jobId}`);
+            const progressData = await progressResponse.json();
+            
+            // Update status bar with progress
+            showProgress(progressData.completed, progressData.total);
+            
+            if (progressData.status === 'completed') {
+                clearInterval(pollInterval);
+                
+                // Hide progress and restore query status
+                hideProgress();
+                
+                // Display final results
+                displayResponses({
+                    question: progressData.question,
+                    responses: progressData.responses
+                });
+            }
+        } catch (error) {
+            console.error('Error checking progress:', error);
+            clearInterval(pollInterval);
+            hideProgress();
+        }
+    }, 5000); // Poll every 5 seconds
+}
 
 // Display responses
 function displayResponses(data) {
-    responsesSection.style.display = 'block';
-
-    // Calculate vote summary
-    const voteCounts = {
-        strongly_support: 0,
-        support: 0,
-        neutral: 0,
-        oppose: 0,
-        strongly_oppose: 0
-    };
-
+    responsesContainer.innerHTML = '';
+    
+    if (!data.responses || data.responses.length === 0) {
+        responsesContainer.innerHTML = '<p>No responses received.</p>';
+        responsesSection.style.display = 'block';
+        return;
+    }
+    
     data.responses.forEach(response => {
-        if (voteCounts.hasOwnProperty(response.support_level)) {
-            voteCounts[response.support_level]++;
-        }
-    });
-
-    // Create vote summary HTML
-    const voteSummary = `
-        <div class="vote-summary">
-            ${voteCounts.strongly_support > 0 ? `<div class="vote-badge strongly-support"><span class="vote-count">${voteCounts.strongly_support}</span> Strongly Support</div>` : ''}
-            ${voteCounts.support > 0 ? `<div class="vote-badge support"><span class="vote-count">${voteCounts.support}</span> Support</div>` : ''}
-            ${voteCounts.neutral > 0 ? `<div class="vote-badge neutral"><span class="vote-count">${voteCounts.neutral}</span> Neutral</div>` : ''}
-            ${voteCounts.oppose > 0 ? `<div class="vote-badge oppose"><span class="vote-count">${voteCounts.oppose}</span> Oppose</div>` : ''}
-            ${voteCounts.strongly_oppose > 0 ? `<div class="vote-badge strongly-oppose"><span class="vote-count">${voteCounts.strongly_oppose}</span> Strongly Oppose</div>` : ''}
-        </div>
-    `;
-
-    responsesContainer.innerHTML = voteSummary + data.responses.map((response, index) => `
-        <div class="response-card" data-support="${response.support_level}" data-index="${index}">
+        const responseCard = document.createElement('div');
+        responseCard.className = `response-card ${response.support_level}`;
+        
+        responseCard.innerHTML = `
             <div class="response-header">
-                <div class="judge-info">
-                    <h3>${response.judge_title}</h3>
-                    <p class="response-brief">${response.brief}</p>
+                <h3>${response.judge_title}</h3>
+                <span class="support-level ${response.support_level}">${response.support_level}</span>
+            </div>
+            <div class="response-content">
+                <div class="brief-response">
+                    <p>${response.brief}</p>
+                    <button class="expand-btn" onclick="toggleResponse(this)">Read Full Response</button>
                 </div>
-                <span class="expand-icon">▼</span>
+                <div class="full-response" style="display: none;">
+                    <p>${response.full_response}</p>
+                    <button class="collapse-btn" onclick="toggleResponse(this)">Show Less</button>
+                </div>
             </div>
-            <div class="response-body">
-                <div class="response-full">${response.full_response}</div>
-            </div>
-        </div>
-    `).join('');
-
-    // Add click handlers for expanding responses
-    document.querySelectorAll('.response-header').forEach(header => {
-        header.addEventListener('click', () => {
-            const card = header.closest('.response-card');
-            card.classList.toggle('expanded');
-        });
+        `;
+        
+        responsesContainer.appendChild(responseCard);
     });
-
-    // Scroll to responses
-    responsesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    
+    responsesSection.style.display = 'block';
 }
 
-// Show alert message
-function showAlert(message, type = 'error') {
-    const existingAlert = document.querySelector('.alert');
-    if (existingAlert) {
-        existingAlert.remove();
+// Toggle response expansion
+function toggleResponse(button) {
+    const responseCard = button.closest('.response-card');
+    const briefResponse = responseCard.querySelector('.brief-response');
+    const fullResponse = responseCard.querySelector('.full-response');
+    
+    if (fullResponse.style.display === 'none') {
+        briefResponse.style.display = 'none';
+        fullResponse.style.display = 'block';
+    } else {
+        briefResponse.style.display = 'block';
+        fullResponse.style.display = 'none';
     }
+}
 
+// Show alert
+function showAlert(message, type = 'info') {
     const alert = document.createElement('div');
     alert.className = `alert alert-${type}`;
     alert.textContent = message;
-
-    const main = document.querySelector('main');
-    main.insertBefore(alert, main.firstChild);
-
-    setTimeout(() => alert.remove(), 5000);
+    
+    document.body.appendChild(alert);
+    
+    setTimeout(() => {
+        alert.remove();
+    }, 5000);
 }
-
-// Initialize on load
-init();
