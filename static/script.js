@@ -292,6 +292,35 @@ function displayResponses(data) {
         return;
     }
     
+    // Create summary by support level
+    const summary = {};
+    data.responses.forEach(response => {
+        const level = response.support_level || 'neutral';
+        if (!summary[level]) {
+            summary[level] = [];
+        }
+        summary[level].push(response.judge_title);
+    });
+    
+    // Display summary
+    if (Object.keys(summary).length > 0) {
+        const summaryDiv = document.createElement('div');
+        summaryDiv.className = 'response-summary';
+        summaryDiv.innerHTML = '<h3>Response Summary</h3>';
+        
+        Object.entries(summary).forEach(([level, judges]) => {
+            const summaryItem = document.createElement('div');
+            summaryItem.className = `summary-item ${level}`;
+            summaryItem.innerHTML = `
+                <span class="support-level ${level}">${level}</span>: 
+                ${judges.join(', ')} (${judges.length})
+            `;
+            summaryDiv.appendChild(summaryItem);
+        });
+        
+        responsesContainer.appendChild(summaryDiv);
+    }
+    
     data.responses.forEach(response => {
         const responseCard = document.createElement('div');
         responseCard.className = `response-card ${response.support_level}`;
