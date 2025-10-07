@@ -494,11 +494,18 @@ footer {
     font-size: 1.2rem;
 }
 
+#summary-content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
 .summary-item {
-    margin: 0.5rem 0;
+    margin: 0;
     padding: 0.5rem;
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.05);
+    flex: 0 0 auto;
 }
 
 .summary-item .support-level {
