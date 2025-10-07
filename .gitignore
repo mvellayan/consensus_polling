@@ -3,3 +3,15 @@ scotus/*.json
 .idea/
 .claude/
 .env
+__pycache__/
+*.pyc
+.DS_Store
+.venv/
+queries.db
+queries_empty.db
+*.log
+
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml

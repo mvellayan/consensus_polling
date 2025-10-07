@@ -49,9 +49,13 @@ if not os.path.exists('queries.db'):
 
 def load_judge_assistants() -> Dict[str, Dict]:
     """Load judge assistant information from the saved JSON file."""
-    with open("judge_assistants.json", 'r') as f:
-        assistants = json.load(f)
-        return {a['judge_name']: a for a in assistants}
+    try:
+        with open("judge_assistants.json", 'r') as f:
+            assistants = json.load(f)
+            return {a['judge_name']: a for a in assistants}
+    except FileNotFoundError:
+        print("ERROR: judge_assistants.json not found")
+        return {}
 
 
 def get_ip_query_count(ip_address: str) -> int:
@@ -149,6 +153,12 @@ def query_judge(judge_name: str, assistant_id: str, thread_id: str, question: st
                 return '\n'.join(text_parts)
 
     return f"Error: Run status was {run.status}"
+
+
+@app.route('/health')
+def health_check():
+    """Health check endpoint."""
+    return jsonify({'status': 'healthy', 'judges_loaded': len(load_judge_assistants())})
 
 
 @app.route('/')
