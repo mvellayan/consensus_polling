@@ -594,6 +594,27 @@ footer .disclaimer {
     margin-bottom: 1rem;
 }
 
+/* Bar segment colors - ensure all support levels work in proportional bar */
+.bar-segment.strongly-support {
+    background: var(--strongly-support) !important;
+}
+
+.bar-segment.support {
+    background: var(--support) !important;
+}
+
+.bar-segment.neutral {
+    background: var(--neutral) !important;
+}
+
+.bar-segment.oppose {
+    background: var(--oppose) !important;
+}
+
+.bar-segment.strongly-oppose {
+    background: var(--strongly-oppose) !important;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     header h1 {

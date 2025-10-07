@@ -134,19 +134,41 @@ def log_response(ip_address: str, query_id: int, judge_name: str, judge_title: s
 
 
 
-def analyze_support_level(response: str) -> str:
+def analyze_support_level(response: str, question: str = "") -> str:
     """Analyze the response to determine support level using OpenAI."""
     if not client:
         return 'neutral'
     
     try:
+        # Extract the last paragraph for sentiment analysis
+        paragraphs = response.strip().split('\n\n')
+        last_paragraph = paragraphs[-1] if paragraphs else response
+        
+        system_prompt = """You are analyzing a Supreme Court Justice's response to determine their position. 
+        
+        Focus ONLY on the last paragraph provided, as it contains the Justice's final conclusion.
+        
+        Determine if they are:
+        - 'strongly_support': Clearly and enthusiastically in favor of the position/action in question
+        - 'support': Generally in favor but with some reservations or conditions
+        - 'neutral': Balanced view or unclear position
+        - 'oppose': Generally against the position/action in question
+        - 'strongly_oppose': Clearly and firmly against the position/action in question
+        
+        Important: If they say "No" to a question asking if something should be allowed/permitted, that means they OPPOSE it.
+        If they say "Yes" to a question asking if something should be allowed/permitted, that means they SUPPORT it.
+        
+        Respond with ONLY one of these five words: strongly_support, support, neutral, oppose, strongly_oppose"""
+        
+        user_content = f"Question: {question}\n\nJustice's Final Conclusion: {last_paragraph}" if question else f"Justice's Final Conclusion: {last_paragraph}"
+        
         analysis = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "You are analyzing a Supreme Court Justice's response. Determine if they are 'strongly_support', 'support', 'neutral', 'oppose', or 'strongly_oppose' based on the tone and content. Respond with ONLY one of these five words."},
-                {"role": "user", "content": response}
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_content}
             ],
-            temperature=0.3,
+            temperature=0.1,
             max_tokens=10
         )
         level = analysis.choices[0].message.content.strip().lower()
@@ -295,7 +317,7 @@ def query_judges():
                     thread_id=judge_info['thread_id'],
                     question=question
                 )
-                support_level = analyze_support_level(response)
+                support_level = analyze_support_level(response, question)
                 brief = response[:150] + '...' if len(response) > 150 else response
                 log_response(ip_address, query_id, judge_name, judge_info['judge_title'], response, support_level)
                 
@@ -374,7 +396,7 @@ def process_judges_async(job_id, question, judge_names, ip_address):
                 thread_id=judge_info['thread_id'],
                 question=question
             )
-            support_level = analyze_support_level(response)
+            support_level = analyze_support_level(response, question)
             brief = response[:150] + '...' if len(response) > 150 else response
             log_response(ip_address, query_id, judge_name, judge_info['judge_title'], response, support_level)
             
