@@ -576,6 +576,12 @@ footer {
     color: white;
 }
 
+.response-content p {
+    white-space: pre-wrap;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     header h1 {
