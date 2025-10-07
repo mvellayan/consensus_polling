@@ -299,16 +299,51 @@ function updateSummaryDisplay(summary) {
         return;
     }
     
-    summaryContent.innerHTML = '';
+    // Calculate total judges
+    const totalJudges = Object.values(summary).reduce((sum, judges) => sum + judges.length, 0);
+    
+    // Create proportional bar
+    const barDiv = document.createElement('div');
+    barDiv.className = 'summary-bar';
+    barDiv.style.cssText = `
+        display: flex;
+        width: 80%;
+        height: 40px;
+        border-radius: 8px;
+        overflow: hidden;
+        margin: 1rem auto;
+        border: 1px solid #ccc;
+    `;
+    
+    // Add segments for each support level
     Object.entries(summary).forEach(([level, judges]) => {
-        const summaryItem = document.createElement('div');
-        summaryItem.className = `summary-item ${level}`;
-        summaryItem.innerHTML = `
-            <span class="support-level ${level}">${level.replace('_', ' ')}</span>: 
-            ${judges.join(', ')} (${judges.length})
+        const percentage = (judges.length / totalJudges) * 100;
+        const segment = document.createElement('div');
+        segment.className = `bar-segment ${level}`;
+        
+        // Get last names only
+        const lastNames = judges.map(name => name.split(' ').pop());
+        
+        segment.style.cssText = `
+            flex: ${judges.length};
+            background: var(--${level.replace('_', '-')});
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: ${level.includes('neutral') || level.includes('strongly-oppose') ? 'white' : 'black'};
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 0 4px;
+            text-align: center;
+            overflow: hidden;
         `;
-        summaryContent.appendChild(summaryItem);
+        
+        segment.innerHTML = `${judges.length} ${lastNames.join(', ')}`;
+        barDiv.appendChild(segment);
     });
+    
+    summaryContent.innerHTML = '';
+    summaryContent.appendChild(barDiv);
 }
 
 // Update responses display as they arrive
@@ -369,16 +404,49 @@ function displayResponses(data) {
         summaryDiv.className = 'response-summary';
         summaryDiv.innerHTML = '<h3>Response Summary</h3>';
         
+        // Calculate total judges
+        const totalJudges = Object.values(summary).reduce((sum, judges) => sum + judges.length, 0);
+        
+        // Create proportional bar
+        const barDiv = document.createElement('div');
+        barDiv.className = 'summary-bar';
+        barDiv.style.cssText = `
+            display: flex;
+            width: 80%;
+            height: 40px;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 1rem auto;
+            border: 1px solid #ccc;
+        `;
+        
+        // Add segments for each support level
         Object.entries(summary).forEach(([level, judges]) => {
-            const summaryItem = document.createElement('div');
-            summaryItem.className = `summary-item ${level}`;
-            summaryItem.innerHTML = `
-                <span class="support-level ${level}">${level.replace('_', ' ')}</span>: 
-                ${judges.join(', ')} (${judges.length})
+            const segment = document.createElement('div');
+            segment.className = `bar-segment ${level}`;
+            
+            // Get last names only
+            const lastNames = judges.map(name => name.split(' ').pop());
+            
+            segment.style.cssText = `
+                flex: ${judges.length};
+                background: var(--${level.replace('_', '-')});
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: ${level.includes('neutral') || level.includes('strongly-oppose') ? 'white' : 'black'};
+                font-size: 0.8rem;
+                font-weight: 600;
+                padding: 0 4px;
+                text-align: center;
+                overflow: hidden;
             `;
-            summaryDiv.appendChild(summaryItem);
+            
+            segment.innerHTML = `${judges.length} ${lastNames.join(', ')}`;
+            barDiv.appendChild(segment);
         });
         
+        summaryDiv.appendChild(barDiv);
         responsesContainer.appendChild(summaryDiv);
     }
     
