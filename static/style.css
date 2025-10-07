@@ -16,7 +16,7 @@
     --white: #ffffff;
 
     /* Support level colors */
-    --strongly-support: #22c55e;
+    --strongly-support: #00ff00;
     --support: #86efac;
     --neutral: #94a3b8;
     --oppose: #fb923c;
@@ -447,10 +447,22 @@ main {
 }
 
 footer {
-    background: var(--bg);
-    padding: 1.5rem;
+    background: #333;
+    padding: 1rem;
     text-align: center;
-    border-top: 1px solid var(--border);
+    border-top: 3px solid #007bff;
+    margin-top: 2rem;
+}
+
+footer .disclaimer {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: white;
+    padding: 0.5rem;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid #666;
+    border-radius: 8px;
+    margin: 0;
 }
 
 .query-status {
