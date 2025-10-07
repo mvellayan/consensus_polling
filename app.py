@@ -343,7 +343,18 @@ def get_progress(job_id):
     if job_id not in job_progress:
         return jsonify({'error': 'Job not found'}), 404
     
-    return jsonify(job_progress[job_id])
+    progress_data = job_progress[job_id].copy()
+    
+    # Calculate summary for real-time display
+    summary = {}
+    for response in progress_data['responses']:
+        level = response.get('support_level', 'neutral')
+        if level not in summary:
+            summary[level] = []
+        summary[level].append(response['judge_title'])
+    
+    progress_data['summary'] = summary
+    return jsonify(progress_data)
 
 def process_judges_async(job_id, question, judge_names, ip_address):
     """Process judges asynchronously with progress updates."""

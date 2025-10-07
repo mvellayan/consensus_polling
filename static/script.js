@@ -143,8 +143,7 @@ function updateAskButton() {
     const hasQuestion = questionInput.value.trim().length > 0;
     const hasSelectedJudges = selectedJudges.size > 0;
     
-    // For local testing, ignore query limit
-    const shouldEnable = hasQuestion && hasSelectedJudges;
+    const shouldEnable = hasQuestion && hasSelectedJudges && queriesRemaining > 0;
     askButton.disabled = !shouldEnable;
 }
 
@@ -252,6 +251,16 @@ async function handleAskQuestion() {
 async function handleAsyncProcessing(jobId, question) {
     // Show initial progress in status bar
     showProgress(0, selectedJudges.size);
+    
+    // Clear responses and show the section
+    responsesContainer.innerHTML = '';
+    responsesSection.style.display = 'block';
+    
+    // Create summary container
+    const summaryDiv = document.createElement('div');
+    summaryDiv.className = 'response-summary';
+    summaryDiv.innerHTML = '<h3>Response Summary</h3><div id="summary-content">Waiting for responses...</div>';
+    responsesContainer.appendChild(summaryDiv);
 
     // Poll for progress every 5 seconds
     const pollInterval = setInterval(async () => {
@@ -262,17 +271,15 @@ async function handleAsyncProcessing(jobId, question) {
             // Update status bar with progress
             showProgress(progressData.completed, progressData.total);
             
+            // Update summary in real-time
+            updateSummaryDisplay(progressData.summary);
+            
+            // Add new responses as they arrive
+            updateResponsesDisplay(progressData.responses);
+            
             if (progressData.status === 'completed') {
                 clearInterval(pollInterval);
-                
-                // Hide progress and restore query status
                 hideProgress();
-                
-                // Display final results
-                displayResponses({
-                    question: progressData.question,
-                    responses: progressData.responses
-                });
             }
         } catch (error) {
             console.error('Error checking progress:', error);
@@ -280,6 +287,60 @@ async function handleAsyncProcessing(jobId, question) {
             hideProgress();
         }
     }, 5000); // Poll every 5 seconds
+}
+
+// Update summary display in real-time
+function updateSummaryDisplay(summary) {
+    const summaryContent = document.getElementById('summary-content');
+    if (!summaryContent) return;
+    
+    if (!summary || Object.keys(summary).length === 0) {
+        summaryContent.innerHTML = 'Waiting for responses...';
+        return;
+    }
+    
+    summaryContent.innerHTML = '';
+    Object.entries(summary).forEach(([level, judges]) => {
+        const summaryItem = document.createElement('div');
+        summaryItem.className = `summary-item ${level}`;
+        summaryItem.innerHTML = `
+            <span class="support-level ${level}">${level.replace('_', ' ')}</span>: 
+            ${judges.join(', ')} (${judges.length})
+        `;
+        summaryContent.appendChild(summaryItem);
+    });
+}
+
+// Update responses display as they arrive
+function updateResponsesDisplay(responses) {
+    // Remove existing response cards (keep summary)
+    const existingCards = responsesContainer.querySelectorAll('.response-card');
+    existingCards.forEach(card => card.remove());
+    
+    // Add all current responses
+    responses.forEach(response => {
+        const responseCard = document.createElement('div');
+        responseCard.className = `response-card ${response.support_level}`;
+        
+        responseCard.innerHTML = `
+            <div class="response-header">
+                <h3 style="color: var(--${response.support_level})">${response.judge_title}</h3>
+                <span class="support-level ${response.support_level}">${response.support_level.replace('_', ' ')}</span>
+            </div>
+            <div class="response-content">
+                <div class="brief-response">
+                    <p>${response.brief}</p>
+                    <button class="expand-btn" onclick="toggleResponse(this)">Read Full Response</button>
+                </div>
+                <div class="full-response" style="display: none;">
+                    <p>${response.full_response}</p>
+                    <button class="collapse-btn" onclick="toggleResponse(this)">Show Less</button>
+                </div>
+            </div>
+        `;
+        
+        responsesContainer.appendChild(responseCard);
+    });
 }
 
 // Display responses
@@ -312,7 +373,7 @@ function displayResponses(data) {
             const summaryItem = document.createElement('div');
             summaryItem.className = `summary-item ${level}`;
             summaryItem.innerHTML = `
-                <span class="support-level ${level}">${level}</span>: 
+                <span class="support-level ${level}">${level.replace('_', ' ')}</span>: 
                 ${judges.join(', ')} (${judges.length})
             `;
             summaryDiv.appendChild(summaryItem);
@@ -327,8 +388,8 @@ function displayResponses(data) {
         
         responseCard.innerHTML = `
             <div class="response-header">
-                <h3>${response.judge_title}</h3>
-                <span class="support-level ${response.support_level}">${response.support_level}</span>
+                <h3 style="color: var(--${response.support_level})">${response.judge_title}</h3>
+                <span class="support-level ${response.support_level}">${response.support_level.replace('_', ' ')}</span>
             </div>
             <div class="response-content">
                 <div class="brief-response">
