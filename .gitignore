@@ -10,6 +10,7 @@ __pycache__/
 queries.db
 queries_empty.db
 *.log
+judge*.json
 
 # Elastic Beanstalk Files
 .elasticbeanstalk/*

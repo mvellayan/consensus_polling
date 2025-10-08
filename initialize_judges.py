@@ -1,7 +1,7 @@
 """
-Initialize 9 Supreme Court Judge AI Agents using OpenAI Assistants API (FIXED VERSION).
+Initialize 9 Supreme Court Judge AI Agents using OpenAI Responses API.
 
-This version properly uses the Assistants API with file uploads.
+This version uses the Responses API with GPT-5 models and vector stores for file search.
 """
 
 import os
@@ -81,7 +81,7 @@ def load_judge_documents(judge_name: str) -> Dict[str, List[Dict]]:
 
 
 def create_judge_instructions(judge_name: str) -> str:
-    """Create concise instructions for the assistant."""
+    """Create concise instructions for the judge."""
     return f"""You are Justice {judge_name.title()} of the United States Supreme Court.
 
 ROLE:
@@ -120,8 +120,8 @@ def create_knowledge_document(judge_name: str, documents: Dict) -> str:
     return content
 
 
-def initialize_judge_assistant(judge_name: str) -> Dict:
-    """Create an OpenAI Assistant for a judge."""
+def initialize_judge_vector_store(judge_name: str) -> Dict:
+    """Create a vector store for a judge's knowledge base."""
     print(f"Initializing {judge_name.title()}...")
 
     # Load documents
@@ -146,71 +146,59 @@ def initialize_judge_assistant(judge_name: str) -> Dict:
 
     print(f"  - Uploaded to OpenAI (file_id: {file_obj.id})")
 
-    # Create assistant with file search
-    assistant = client.beta.assistants.create(
-        name=f"Justice {judge_name.title()}",
-        instructions=create_judge_instructions(judge_name),
-        model="gpt-5-nano",
-        temperature=0.7,
-        top_p=0.8,
-        tools=[{"type": "file_search"}],
-        tool_resources={
-            "file_search": {
-                "vector_stores": [{
-                    "file_ids": [file_obj.id]
-                }]
-            }
-        }
+    # Create vector store with the file
+    vector_store = client.vector_stores.create(
+        name=f"Justice {judge_name.title()} Knowledge Base",
+        file_ids=[file_obj.id]
     )
 
-    # Create a thread
-    thread = client.beta.threads.create()
+    print(f"  - Created vector store (id: {vector_store.id})")
 
     # Clean up temp file
     os.remove(temp_file)
 
     print(f"  ✓ Successfully initialized {judge_name.title()}")
-    print(f"    Assistant ID: {assistant.id}")
-    print(f"    Thread ID: {thread.id}")
+    print(f"    Vector Store ID: {vector_store.id}")
+    print(f"    File ID: {file_obj.id}")
     print()
 
     return {
         'judge_name': judge_name,
         'judge_title': f"Justice {judge_name.title()}",
-        'assistant_id': assistant.id,
-        'thread_id': thread.id,
+        'vector_store_id': vector_store.id,
         'file_id': file_obj.id,
+        'instructions': create_judge_instructions(judge_name),
         'num_opinions': len(documents['opinions']),
         'num_cases': len(documents['syllabi'])
     }
 
 
 def main():
-    """Initialize all 9 judge assistants."""
+    """Initialize all 9 judge vector stores."""
     print("=" * 60)
-    print("Initializing Supreme Court Judge AI Assistants (FIXED)")
+    print("Initializing Supreme Court Judges (Responses API)")
     print("=" * 60)
     print()
 
-    judge_assistants = []
+    judge_data = []
 
     for judge in JUDGES:
         try:
-            judge_info = initialize_judge_assistant(judge)
-            judge_assistants.append(judge_info)
+            judge_info = initialize_judge_vector_store(judge)
+            judge_data.append(judge_info)
         except Exception as e:
             print(f"  ✗ Error initializing {judge}: {str(e)}")
             print()
 
-    # Save assistant information
+    # Save judge information
     output_file = "judge_assistants.json"
     with open(output_file, 'w') as f:
-        json.dump(judge_assistants, f, indent=2)
+        json.dump(judge_data, f, indent=2)
 
     print("=" * 60)
     print(f"Initialization complete!")
-    print(f"Assistant information saved to: {output_file}")
-    print(f"Total judges initialized: {len(judge_assistants)}/9")
+    print(f"Judge information saved to: {output_file}")
+    print(f"Total judges initialized: {len(judge_data)}/9")
     print("=" * 60)
 
 

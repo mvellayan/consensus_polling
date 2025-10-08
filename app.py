@@ -180,52 +180,32 @@ def analyze_support_level(response: str, question: str = "") -> str:
         return 'neutral'
 
 
-def query_judge(judge_name: str, assistant_id: str, thread_id: str, question: str) -> str:
-    """Send a question to a specific judge and get their response."""
+def query_judge(judge_name: str, vector_store_id: str, instructions: str, question: str, model: str = "gpt-5-nano") -> str:
+    """Send a question to a specific judge and get their response using Responses API."""
     if not client:
         return "Error: OpenAI client not initialized"
-    
+
     try:
-        # Add the user's question to the thread
-        client.beta.threads.messages.create(
-            thread_id=thread_id,
-            role="user",
-            content=question
+        # Add length constraint to instructions
+        enhanced_instructions = f"{instructions}\n\nIMPORTANT: Keep your response under 2000 characters. Be concise and focused."
+
+        # Create a response with file search enabled
+        response = client.responses.create(
+            model=model,
+            instructions=enhanced_instructions,
+            input=question,
+            tools=[{
+                "type": "file_search",
+                "vector_store_ids": [vector_store_id]
+            }],
+            reasoning={
+                "effort": "medium"
+            }
         )
 
-        # Create a run with the assistant
-        run = client.beta.threads.runs.create(
-            thread_id=thread_id,
-            assistant_id=assistant_id
-        )
+        # Extract the text response
+        return response.output_text
 
-        # Wait for the run to complete
-        while run.status in ['queued', 'in_progress', 'requires_action']:
-            time.sleep(1)
-            run = client.beta.threads.runs.retrieve(
-                thread_id=thread_id,
-                run_id=run.id
-            )
-
-        if run.status == 'completed':
-            # Get the assistant's messages
-            messages = client.beta.threads.messages.list(
-                thread_id=thread_id,
-                order='desc',
-                limit=1
-            )
-
-            # Extract the response
-            if messages.data:
-                response_message = messages.data[0]
-                if response_message.content:
-                    text_parts = []
-                    for content in response_message.content:
-                        if hasattr(content, 'text'):
-                            text_parts.append(content.text.value)
-                    return '\n'.join(text_parts)
-
-        return f"Error: Run status was {run.status}"
     except Exception as e:
         return f"Error querying judge: {str(e)}"
 
@@ -313,8 +293,8 @@ def query_judges():
             try:
                 response = query_judge(
                     judge_name=judge_name,
-                    assistant_id=judge_info['assistant_id'],
-                    thread_id=judge_info['thread_id'],
+                    vector_store_id=judge_info['vector_store_id'],
+                    instructions=judge_info['instructions'],
                     question=question
                 )
                 support_level = analyze_support_level(response, question)
@@ -392,8 +372,8 @@ def process_judges_async(job_id, question, judge_names, ip_address):
         try:
             response = query_judge(
                 judge_name=judge_name,
-                assistant_id=judge_info['assistant_id'],
-                thread_id=judge_info['thread_id'],
+                vector_store_id=judge_info['vector_store_id'],
+                instructions=judge_info['instructions'],
                 question=question
             )
             support_level = analyze_support_level(response, question)

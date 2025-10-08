@@ -1,5 +1,7 @@
 """
-Delete all initialized Supreme Court Judge AI Assistants and their resources.
+Delete all initialized Supreme Court Judge resources (Responses API version).
+
+This deletes vector stores and files created for the Responses API.
 """
 
 import json
@@ -9,37 +11,30 @@ client = OpenAI()
 
 
 def delete_judges():
-    """Delete all judge assistants, threads, and files."""
+    """Delete all judge vector stores and files."""
 
-    # Load judge assistants
+    # Load judge data
     try:
         with open("judge_assistants.json", 'r') as f:
-            assistants = json.load(f)
+            judges = json.load(f)
     except FileNotFoundError:
         print("No judge_assistants.json found. Nothing to delete.")
         return
 
-    print(f"Found {len(assistants)} judges to delete.\n")
+    print(f"Found {len(judges)} judges to delete.\n")
 
-    for judge in assistants:
+    for judge in judges:
         judge_name = judge['judge_name']
         judge_title = judge['judge_title']
 
         print(f"Deleting {judge_title} ({judge_name})...")
 
-        # Delete thread
+        # Delete vector store
         try:
-            client.beta.threads.delete(judge['thread_id'])
-            print(f"  ✓ Deleted thread: {judge['thread_id']}")
+            client.vector_stores.delete(judge['vector_store_id'])
+            print(f"  ✓ Deleted vector store: {judge['vector_store_id']}")
         except Exception as e:
-            print(f"  ✗ Error deleting thread: {str(e)}")
-
-        # Delete assistant
-        try:
-            client.beta.assistants.delete(judge['assistant_id'])
-            print(f"  ✓ Deleted assistant: {judge['assistant_id']}")
-        except Exception as e:
-            print(f"  ✗ Error deleting assistant: {str(e)}")
+            print(f"  ✗ Error deleting vector store: {str(e)}")
 
         # Delete file
         try:
@@ -50,25 +45,21 @@ def delete_judges():
 
         print()
 
-    # Delete the JSON files
+    # Delete the JSON file
     import os
-
-    files_to_delete = ['judge_assistants.json', 'judge_threads.json']
-
-    for file in files_to_delete:
-        if os.path.exists(file):
-            os.remove(file)
-            print(f"✓ Deleted {file}")
+    if os.path.exists('judge_assistants.json'):
+        os.remove('judge_assistants.json')
+        print("✓ Deleted judge_assistants.json")
 
     print("\n✅ All judges and resources have been deleted!")
-    print("You can now run initialize_judges.py to create fresh assistants.")
+    print("You can now run initialize_judges.py to create fresh resources.")
 
 
 if __name__ == "__main__":
     print("=" * 80)
-    print("DELETE SUPREME COURT JUDGE AI ASSISTANTS")
+    print("DELETE SUPREME COURT JUDGE RESOURCES")
     print("=" * 80)
-    print("\nThis will delete all judge assistants, threads, and uploaded files.")
+    print("\nThis will delete all judge vector stores and uploaded files.")
 
     confirm = input("\nAre you sure you want to continue? (yes/no): ")
 
