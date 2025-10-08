@@ -167,7 +167,7 @@ main {
     padding: 1rem;
     border: 2px solid var(--border);
     border-radius: 12px;
-    background: #819fb3;
+    background: #b0c4d1;
     cursor: pointer;
     transition: all 0.3s;
     text-align: center;
@@ -510,6 +510,7 @@ footer .disclaimer {
     display: flex;
     flex-wrap: wrap;
     gap: 1rem;
+    padding: 0.25rem 0.1rem;
 }
 
 .summary-item {

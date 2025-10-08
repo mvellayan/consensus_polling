@@ -150,7 +150,9 @@ def initialize_judge_assistant(judge_name: str) -> Dict:
     assistant = client.beta.assistants.create(
         name=f"Justice {judge_name.title()}",
         instructions=create_judge_instructions(judge_name),
-        model="gpt-4o-mini",
+        model="gpt-5-nano",
+        temperature=0.7,
+        top_p=0.8,
         tools=[{"type": "file_search"}],
         tool_resources={
             "file_search": {
