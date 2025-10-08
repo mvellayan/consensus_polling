@@ -5,22 +5,13 @@ Flask web server for AI Supreme Court application.
 import os
 import json
 import time
-import sqlite3
 import threading
 import uuid
 from datetime import datetime
 from flask import Flask, render_template, request, jsonify
 from openai import OpenAI
 from typing import List, Dict
-import boto3
-
-dynamodb = boto3.resource('dynamodb')
-
-# Progress tracking storage
-job_progress = {}
-
-# Progress tracking storage
-job_progress = {}
+import dynamodb_util
 
 try:
     from dotenv import load_dotenv
@@ -37,40 +28,10 @@ app = Flask(__name__)
 # Initialize OpenAI client with error handling
 try:
     client = OpenAI()
+    print("✅ OpenAI client initialized successfully")
 except Exception as e:
-    print(f"Error initializing OpenAI client: {e}")
+    print(f"❌ Error initializing OpenAI client: {e}")
     client = None
-
-# Database initialization
-def init_db():
-    """Initialize SQLite database for logging."""
-    conn = sqlite3.connect('queries.db')
-    c = conn.cursor()
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS queries (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            ip_address TEXT NOT NULL,
-            question TEXT NOT NULL,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS responses (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            query_id INTEGER NOT NULL,
-            judge_name TEXT NOT NULL,
-            judge_title TEXT NOT NULL,
-            response TEXT NOT NULL,
-            support_level TEXT,
-            FOREIGN KEY (query_id) REFERENCES queries(id)
-        )
-    ''')
-    conn.commit()
-    conn.close()
-
-# if queries.db file does not exist, call init_db
-if not os.path.exists('queries.db'):
-    init_db()
 
 
 
@@ -87,50 +48,17 @@ def load_judge_assistants() -> Dict[str, Dict]:
 
 def get_ip_query_count(ip_address: str) -> int:
     """Get the number of queries made by this IP address."""
-    conn = sqlite3.connect('queries.db')
-    c = conn.cursor()
-    c.execute('SELECT COUNT(*) FROM queries WHERE ip_address = ?', (ip_address,))
-    count = c.fetchone()[0]
-    conn.close()
-    return count
+    return dynamodb_util.get_ip_query_count(ip_address)
 
 
-def log_query(ip_address: str, question: str) -> int:
+def log_query(ip_address: str, question: str) -> str:
     """Log a query and return the query ID."""
-    conn = sqlite3.connect('queries.db')
-    c = conn.cursor()
-    c.execute('INSERT INTO queries (ip_address, question) VALUES (?, ?)', (ip_address, question))
-    query_id = c.lastrowid
-    conn.commit()
-    conn.close()
-    table = dynamodb.Table('scotus_queries')
-    table.put_item(Item={
-        'ipaddress_timestamp': f"{ip_address}_{datetime.now().strftime('%Y%m%d_%H%M%S%f')}",
-        'ip_address': ip_address,
-        'question': question
-    })
-    return query_id
+    return dynamodb_util.log_query(ip_address, question)
 
 
-def log_response(ip_address: str, query_id: int, judge_name: str, judge_title: str, response: str, support_level: str):
+def log_response(ip_address: str, query_id: str, judge_name: str, judge_title: str, response: str, support_level: str):
     """Log a judge's response."""
-    conn = sqlite3.connect('queries.db')
-    c = conn.cursor()
-    c.execute('''
-        INSERT INTO responses (query_id, judge_name, judge_title, response, support_level)
-        VALUES (?, ?, ?, ?, ?)
-    ''', (query_id, judge_name, judge_title, response, support_level))
-    conn.commit()
-    conn.close()
-    table = dynamodb.Table('scotus_responses')
-    table.put_item(Item={
-        'ipaddress_timestamp': f"{ip_address}_{datetime.now().strftime('%Y%m%d_%H%M%S%f')}",
-        'ip_address': ip_address,
-        'judge_name': judge_name,
-        'judge_title': judge_title,
-        'response': response,
-        'support_level': support_level
-    })
+    dynamodb_util.log_response(ip_address, query_id, judge_name, judge_title, response, support_level)
 
 
 
@@ -175,9 +103,12 @@ def analyze_support_level(response: str, question: str = "") -> str:
 def query_judge(judge_name: str, vector_store_id: str, instructions: str, question: str, model: str = "gpt-5-nano") -> str:
     """Send a question to a specific judge and get their response using Responses API."""
     if not client:
+        print(f"ERROR: OpenAI client not initialized for {judge_name}")
         return "Error: OpenAI client not initialized"
 
     try:
+        print(f"Querying {judge_name} with model {model}...")
+
         # Add length constraint to instructions
         enhanced_instructions = f"{instructions}\n\nIMPORTANT: Keep your response under 2000 characters. Be concise and focused."
 
@@ -195,11 +126,14 @@ def query_judge(judge_name: str, vector_store_id: str, instructions: str, questi
             }
         )
 
+        print(f"Successfully received response from {judge_name}")
         # Extract the text response
         return response.output_text
 
     except Exception as e:
-        return f"Error querying judge: {str(e)}"
+        error_msg = f"Error querying judge {judge_name}: {str(e)}"
+        print(error_msg)
+        return error_msg
 
 
 @app.route('/health')
@@ -316,13 +250,15 @@ def query_judges():
 
     # For multiple judges, start async processing
     job_id = str(uuid.uuid4())
-    job_progress[job_id] = {
+
+    # Initialize job progress in DynamoDB
+    dynamodb_util.save_job_progress(job_id, {
         'status': 'processing',
         'total': len(judge_names),
         'completed': 0,
         'responses': [],
         'question': question
-    }
+    })
 
     # Start background processing
     thread = threading.Thread(target=process_judges_async, args=(job_id, question, judge_names, ip_address))
@@ -334,30 +270,27 @@ def query_judges():
 @app.route('/api/progress/<job_id>', methods=['GET'])
 def get_progress(job_id):
     """Get progress of a judge query job."""
-    if job_id not in job_progress:
+    progress_data = dynamodb_util.get_job_progress(job_id)
+
+    if not progress_data:
         return jsonify({'error': 'Job not found'}), 404
-    
-    progress_data = job_progress[job_id].copy()
-    
-    # Calculate summary for real-time display
-    summary = {}
-    for response in progress_data['responses']:
-        level = response.get('support_level', 'neutral')
-        if level not in summary:
-            summary[level] = []
-        summary[level].append(response['judge_title'])
-    
-    progress_data['summary'] = summary
+
     return jsonify(progress_data)
 
 def process_judges_async(job_id, question, judge_names, ip_address):
     """Process judges asynchronously with progress updates."""
     query_id = log_query(ip_address, question)
     judge_assistants = load_judge_assistants()
-    
+
+    # Get current progress from DynamoDB
+    progress = dynamodb_util.get_job_progress(job_id)
+    if not progress:
+        return
+
     for i, judge_name in enumerate(judge_names):
         if judge_name not in judge_assistants:
-            job_progress[job_id]['completed'] = i + 1
+            progress['completed'] = i + 1
+            dynamodb_util.save_job_progress(job_id, progress)
             continue
 
         judge_info = judge_assistants[judge_name]
@@ -371,8 +304,8 @@ def process_judges_async(job_id, question, judge_names, ip_address):
             support_level = analyze_support_level(response, question)
             brief = response[:150] + '...' if len(response) > 150 else response
             log_response(ip_address, query_id, judge_name, judge_info['judge_title'], response, support_level)
-            
-            job_progress[job_id]['responses'].append({
+
+            progress['responses'].append({
                 'judge_name': judge_name,
                 'judge_title': judge_info['judge_title'],
                 'brief': brief,
@@ -380,17 +313,19 @@ def process_judges_async(job_id, question, judge_names, ip_address):
                 'support_level': support_level
             })
         except Exception as e:
-            job_progress[job_id]['responses'].append({
+            progress['responses'].append({
                 'judge_name': judge_name,
                 'judge_title': judge_info['judge_title'],
                 'brief': f'Error: {str(e)}',
                 'full_response': f'Error: {str(e)}',
                 'support_level': 'neutral'
             })
-        
-        job_progress[job_id]['completed'] = i + 1
-    
-    job_progress[job_id]['status'] = 'completed'
+
+        progress['completed'] = i + 1
+        dynamodb_util.save_job_progress(job_id, progress)
+
+    progress['status'] = 'completed'
+    dynamodb_util.save_job_progress(job_id, progress)
 
 
 if __name__ == '__main__':

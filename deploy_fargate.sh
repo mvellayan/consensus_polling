@@ -136,6 +136,34 @@ aws iam put-role-policy \
   --policy-name DocumentDBAccess \
   --policy-document file://documentdb-policy.json
 
+# Create DynamoDB tables
+echo "📊 Creating DynamoDB tables..."
+
+# Create scotus_queries table
+aws dynamodb create-table \
+  --table-name scotus_queries \
+  --attribute-definitions AttributeName=ipaddress_timestamp,AttributeType=S \
+  --key-schema AttributeName=ipaddress_timestamp,KeyType=HASH \
+  --billing-mode PAY_PER_REQUEST \
+  --region ${REGION} 2>/dev/null || echo "scotus_queries table already exists"
+
+# Create scotus_responses table
+aws dynamodb create-table \
+  --table-name scotus_responses \
+  --attribute-definitions AttributeName=ipaddress_timestamp,AttributeType=S \
+  --key-schema AttributeName=ipaddress_timestamp,KeyType=HASH \
+  --billing-mode PAY_PER_REQUEST \
+  --region ${REGION} 2>/dev/null || echo "scotus_responses table already exists"
+
+# Create scotus_job_progress table
+aws dynamodb create-table \
+  --table-name scotus_job_progress \
+  --attribute-definitions AttributeName=job_id,AttributeType=S \
+  --key-schema AttributeName=job_id,KeyType=HASH \
+  --billing-mode PAY_PER_REQUEST \
+  --time-to-live-specification Enabled=true,AttributeName=ttl \
+  --region ${REGION} 2>/dev/null || echo "scotus_job_progress table already exists"
+
 # Add DynamoDB permissions to task role
 cat > dynamodb-policy.json << EOF
 {
@@ -153,7 +181,8 @@ cat > dynamodb-policy.json << EOF
       ],
       "Resource": [
         "arn:aws:dynamodb:${REGION}:${ACCOUNT_ID}:table/scotus_queries*",
-        "arn:aws:dynamodb:${REGION}:${ACCOUNT_ID}:table/scotus_responses*"
+        "arn:aws:dynamodb:${REGION}:${ACCOUNT_ID}:table/scotus_responses*",
+        "arn:aws:dynamodb:${REGION}:${ACCOUNT_ID}:table/scotus_job_progress*"
       ]
     }
   ]

@@ -19,9 +19,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     queryStatus = document.getElementById('query-status');
     selectAllButton = document.getElementById('select-all');
     
-    console.log('askButton:', askButton);
-    console.log('selectAllButton:', selectAllButton);
-    
     await loadJudges();
     await checkQueryLimit();
     
@@ -40,7 +37,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Add Select All button functionality
     if (selectAllButton) {
-        console.log('Adding click listener to Select All button');
         selectAllButton.addEventListener('click', () => {
             console.log('Select All clicked');
             toggleSelectAll();
@@ -53,7 +49,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Load judges from API
 async function loadJudges() {
     try {
-        const response = await fetch('/api/judges');
+        const response = await fetch(`${window.location.origin}/api/judges`);
         judges = await response.json();
         renderJudges();
     } catch (error) {
@@ -150,7 +146,7 @@ function updateAskButton() {
 // Check query limit
 async function checkQueryLimit() {
     try {
-        const response = await fetch('/api/check-limit');
+        const response = await fetch(`${window.location.origin}/api/check-limit`);
         const data = await response.json();
         queriesRemaining = data.remaining;
         updateQueryStatus();
@@ -191,7 +187,7 @@ async function handleAskQuestion() {
     responsesSection.style.display = 'none';
 
     try {
-        const response = await fetch('/api/query', {
+        const response = await fetch(`${window.location.origin}/api/query`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -216,7 +212,7 @@ async function handleAskQuestion() {
         const data = await response.json();
         
         // Check if this is async processing (multiple judges)
-        if (data.job_id) {
+        if (data.job_id && data.job_id !== null && data.job_id !== undefined) {
             await handleAsyncProcessing(data.job_id, question);
         } else {
             // Single judge - immediate response
@@ -270,6 +266,12 @@ function hideProgressIndicator() {
 
 // Handle async processing with progress updates
 async function handleAsyncProcessing(jobId, question) {
+    // Validate job_id
+    if (!jobId || jobId === null || jobId === undefined || jobId === '') {
+        console.error('Invalid job_id provided to handleAsyncProcessing');
+        return;
+    }
+    
     // Clear responses and show the section
     responsesContainer.innerHTML = '';
     responsesSection.style.display = 'block';
@@ -286,7 +288,7 @@ async function handleAsyncProcessing(jobId, question) {
     // Poll for progress every 5 seconds
     const pollInterval = setInterval(async () => {
         try {
-            const progressResponse = await fetch(`/api/progress/${jobId}`);
+            const progressResponse = await fetch(`${window.location.origin}/api/progress/${jobId}`);
             const progressData = await progressResponse.json();
 
             // Update progress indicator
@@ -374,7 +376,8 @@ function updateResponsesDisplay(responses) {
     existingCards.forEach(card => card.remove());
     
     // Add all current responses
-    responses.forEach(response => {
+    if (responses && Array.isArray(responses)) {
+        responses.forEach(response => {
         const responseCard = document.createElement('div');
         responseCard.className = `response-card ${response.support_level}`;
         
@@ -396,6 +399,7 @@ function updateResponsesDisplay(responses) {
         
         responsesContainer.appendChild(responseCard);
     });
+    }
 }
 
 // Display responses
