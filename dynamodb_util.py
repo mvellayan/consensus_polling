@@ -3,6 +3,7 @@ DynamoDB utility functions for production deployment.
 """
 
 import boto3
+from boto3.dynamodb.conditions import Key, Attr
 from datetime import datetime
 from typing import Dict, Any, Optional
 
@@ -110,13 +111,14 @@ def get_ip_query_count(ip_address: str) -> int:
     """Get the number of queries made by this IP address in DynamoDB."""
     try:
         table = dynamodb.Table(QUERIES_TABLE)
+        print(f"DEBUG: Searching for IP address: '{ip_address}'")
 
-        # Query by partition key prefix
-        response = table.query(
-            KeyConditionExpression='begins_with(ipaddress_timestamp, :ip)',
-            ExpressionAttributeValues={':ip': ip_address}
+        # Use scan with filter instead of query
+        response = table.scan(
+            FilterExpression=Attr('ip_address').eq(ip_address)
         )
 
+        print(f"DEBUG: Found {response['Count']} records for IP {ip_address}")
         return response['Count']
     except Exception as e:
         print(f"Error getting IP query count: {e}")

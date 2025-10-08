@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     responsesContainer = document.getElementById('responses-container');
     queryStatus = document.getElementById('query-status');
     selectAllButton = document.getElementById('select-all');
-    
+
     await loadJudges();
     await checkQueryLimit();
     
@@ -95,10 +95,7 @@ function renderJudges() {
 
 // Toggle select all judges
 function toggleSelectAll() {
-    console.log('toggleSelectAll called');
-    console.log('judges:', judges);
-    console.log('selectedJudges.size:', selectedJudges.size);
-    
+
     if (!judges || judges.length === 0) {
         console.log('No judges available');
         return;
@@ -116,8 +113,6 @@ function toggleSelectAll() {
         });
         if (selectAllButton) selectAllButton.textContent = 'Select All';
     } else {
-        // Select all
-        console.log('Selecting all');
         selectedJudges.clear();
         judges.forEach(judge => {
             selectedJudges.add(judge.judge_name);
@@ -128,7 +123,6 @@ function toggleSelectAll() {
         if (selectAllButton) selectAllButton.textContent = 'Deselect All';
     }
     
-    console.log('selectedJudges after toggle:', selectedJudges);
     updateAskButton();
 }
 
@@ -145,27 +139,18 @@ function updateAskButton() {
 
 // Check query limit
 async function checkQueryLimit() {
-    try {
-        const response = await fetch(`${window.location.origin}/api/check-limit`);
-        const data = await response.json();
-        queriesRemaining = data.remaining;
-        updateQueryStatus();
-    } catch (error) {
-        console.error('Error checking query limit:', error);
-    }
+    updateQueryStatus();
 }
 
 // Update query status display
 function updateQueryStatus() {
     const statusElement = document.getElementById('queries-remaining');
-    if (!statusElement) return;
-
-    if (queriesRemaining === 0) {
-        statusElement.innerHTML = '<span class="limit-reached">No more queries remaining (5/5 used)</span>';
-        askButton.disabled = true;
-    } else {
-        statusElement.innerHTML = `Queries remaining: <span class="queries-count">${queriesRemaining}/5</span>`;
+    if (!statusElement) {
+        console.log('queries-remaining element not found');
+        return;
     }
+
+    statusElement.innerHTML = 'Please limit to 5 queries';
 }
 
 // Handle ask question

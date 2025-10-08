@@ -177,15 +177,62 @@ def get_judges():
     return jsonify(judges)
 
 
+def get_client_ip(request) -> str:
+    """Get the real client IP address from various headers."""
+    # Try different headers that might contain the original client IP
+    headers_to_check = [
+        'X-Forwarded-For',
+        'X-Real-IP', 
+        'X-Client-IP',
+        'CF-Connecting-IP',  # Cloudflare
+        'True-Client-IP',
+        'X-Forwarded',
+        'Forwarded-For'
+    ]
+    
+    print(f"DEBUG: All headers: {dict(request.headers)}")
+    
+    for header in headers_to_check:
+        ip = request.headers.get(header)
+        if ip:
+            # X-Forwarded-For can contain multiple IPs, take the first one
+            if ',' in ip:
+                ip = ip.split(',')[0].strip()
+            print(f"DEBUG: Found IP '{ip}' in header '{header}'")
+            # Skip AWS internal IPs
+            if not ip.startswith('3.235.'):
+                return ip
+    
+    # Check Forwarded header (RFC 7239 format)
+    forwarded = request.headers.get('Forwarded')
+    if forwarded:
+        print(f"DEBUG: Parsing Forwarded header: '{forwarded}'")
+        # Extract IP from "for=IP" format
+        import re
+        match = re.search(r'for=([^;,\s]+)', forwarded)
+        if match:
+            ip = match.group(1)
+            print(f"DEBUG: Extracted IP from Forwarded header: '{ip}'")
+            return ip
+    
+    # Fallback to remote_addr
+    remote_ip = request.remote_addr
+    print(f"DEBUG: Fallback to remote_addr: '{remote_ip}'")
+    return remote_ip
+
+
 @app.route('/api/check-limit')
 def check_limit():
     """Check if IP has reached query limit."""
-    ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
+    ip_address = get_client_ip(request)
+    print(f"DEBUG: check_limit using client IP: '{ip_address}'")
     count = get_ip_query_count(ip_address)
+    print(f"DEBUG: Found {count} queries for IP {ip_address}")
     return jsonify({
         'count': count,
         'remaining': max(0, 5 - count),
-        'limit_reached': count >= 5
+        'limit_reached': count >= 5,
+        'debug_ip': ip_address
     })
 
 
@@ -203,7 +250,8 @@ def query_judges():
         return jsonify({'error': 'At least one judge must be selected'}), 400
 
     # Check IP rate limit
-    ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
+    ip_address = get_client_ip(request)
+    print(f"DEBUG: query_judges using client IP: '{ip_address}'")
     if get_ip_query_count(ip_address) >= 5:
         return jsonify({'error': 'Query limit reached. Maximum 5 queries per IP address.'}), 429
 
