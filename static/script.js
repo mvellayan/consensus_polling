@@ -247,15 +247,40 @@ async function handleAskQuestion() {
     }
 }
 
+// Update progress indicator
+function updateProgressIndicator(completed, total) {
+    const progressIndicator = document.getElementById('progress-indicator');
+    const progressCount = document.getElementById('progress-count');
+    const progressBar = document.getElementById('progress-bar');
+
+    if (progressIndicator && progressCount && progressBar) {
+        progressIndicator.style.display = 'block';
+        const percentage = (completed / total) * 100;
+        progressCount.textContent = `${completed} of ${total} judges response completed`;
+        progressBar.style.width = `${percentage}%`;
+    }
+}
+
+// Hide progress indicator
+function hideProgressIndicator() {
+    const progressIndicator = document.getElementById('progress-indicator');
+    if (progressIndicator) {
+        progressIndicator.style.display = 'none';
+    }
+}
+
 // Handle async processing with progress updates
 async function handleAsyncProcessing(jobId, question) {
     // Show initial progress in status bar
     showProgress(0, selectedJudges.size);
-    
+
     // Clear responses and show the section
     responsesContainer.innerHTML = '';
     responsesSection.style.display = 'block';
-    
+
+    // Show progress indicator
+    updateProgressIndicator(0, selectedJudges.size);
+
     // Create summary container
     const summaryDiv = document.createElement('div');
     summaryDiv.className = 'response-summary';
@@ -267,24 +292,29 @@ async function handleAsyncProcessing(jobId, question) {
         try {
             const progressResponse = await fetch(`/api/progress/${jobId}`);
             const progressData = await progressResponse.json();
-            
+
             // Update status bar with progress
             showProgress(progressData.completed, progressData.total);
-            
+
+            // Update progress indicator
+            updateProgressIndicator(progressData.completed, progressData.total);
+
             // Update summary in real-time
             updateSummaryDisplay(progressData.summary);
-            
+
             // Add new responses as they arrive
             updateResponsesDisplay(progressData.responses);
-            
+
             if (progressData.status === 'completed') {
                 clearInterval(pollInterval);
                 hideProgress();
+                hideProgressIndicator();
             }
         } catch (error) {
             console.error('Error checking progress:', error);
             clearInterval(pollInterval);
             hideProgress();
+            hideProgressIndicator();
         }
     }, 5000); // Poll every 5 seconds
 }
