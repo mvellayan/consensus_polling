@@ -163,26 +163,13 @@ async function checkQueryLimit() {
 function updateQueryStatus() {
     const statusElement = document.getElementById('queries-remaining');
     if (!statusElement) return;
-    
+
     if (queriesRemaining === 0) {
         statusElement.innerHTML = '<span class="limit-reached">No more queries remaining (5/5 used)</span>';
         askButton.disabled = true;
     } else {
         statusElement.innerHTML = `Queries remaining: <span class="queries-count">${queriesRemaining}/5</span>`;
     }
-}
-
-// Show progress in status bar
-function showProgress(completed, total) {
-    const statusElement = document.getElementById('queries-remaining');
-    if (statusElement) {
-        statusElement.innerHTML = `<span class="processing">Processing judges: ${completed}/${total} completed...</span>`;
-    }
-}
-
-// Hide progress and restore query status
-function hideProgress() {
-    updateQueryStatus();
 }
 
 // Handle ask question
@@ -252,6 +239,7 @@ function updateProgressIndicator(completed, total) {
     const progressIndicator = document.getElementById('progress-indicator');
     const progressCount = document.getElementById('progress-count');
     const progressBar = document.getElementById('progress-bar');
+    const waitMessage = document.getElementById('wait-message');
 
     if (progressIndicator && progressCount && progressBar) {
         progressIndicator.style.display = 'block';
@@ -259,21 +247,29 @@ function updateProgressIndicator(completed, total) {
         progressCount.textContent = `${completed} of ${total} judges response completed`;
         progressBar.style.width = `${percentage}%`;
     }
+
+    // Show wait message while processing
+    if (waitMessage && completed < total) {
+        waitMessage.style.display = 'inline';
+    }
 }
 
 // Hide progress indicator
 function hideProgressIndicator() {
     const progressIndicator = document.getElementById('progress-indicator');
+    const waitMessage = document.getElementById('wait-message');
+
     if (progressIndicator) {
         progressIndicator.style.display = 'none';
+    }
+
+    if (waitMessage) {
+        waitMessage.style.display = 'none';
     }
 }
 
 // Handle async processing with progress updates
 async function handleAsyncProcessing(jobId, question) {
-    // Show initial progress in status bar
-    showProgress(0, selectedJudges.size);
-
     // Clear responses and show the section
     responsesContainer.innerHTML = '';
     responsesSection.style.display = 'block';
@@ -293,9 +289,6 @@ async function handleAsyncProcessing(jobId, question) {
             const progressResponse = await fetch(`/api/progress/${jobId}`);
             const progressData = await progressResponse.json();
 
-            // Update status bar with progress
-            showProgress(progressData.completed, progressData.total);
-
             // Update progress indicator
             updateProgressIndicator(progressData.completed, progressData.total);
 
@@ -307,13 +300,11 @@ async function handleAsyncProcessing(jobId, question) {
 
             if (progressData.status === 'completed') {
                 clearInterval(pollInterval);
-                hideProgress();
                 hideProgressIndicator();
             }
         } catch (error) {
             console.error('Error checking progress:', error);
             clearInterval(pollInterval);
-            hideProgress();
             hideProgressIndicator();
         }
     }, 5000); // Poll every 5 seconds
@@ -390,7 +381,6 @@ function updateResponsesDisplay(responses) {
         responseCard.innerHTML = `
             <div class="response-header">
                 <h3 style="color: var(--${response.support_level})">${response.judge_title}</h3>
-                <span class="support-level ${response.support_level}">${response.support_level.replace('_', ' ')}</span>
             </div>
             <div class="response-content">
                 <div class="brief-response">
@@ -487,7 +477,6 @@ function displayResponses(data) {
         responseCard.innerHTML = `
             <div class="response-header">
                 <h3 style="color: var(--${response.support_level})">${response.judge_title}</h3>
-                <span class="support-level ${response.support_level}">${response.support_level.replace('_', ' ')}</span>
             </div>
             <div class="response-content">
                 <div class="brief-response">

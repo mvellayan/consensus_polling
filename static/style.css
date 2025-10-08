@@ -297,10 +297,24 @@ main {
     border-top: 2px solid var(--border);
 }
 
+.responses-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
 .responses-section h2 {
     font-size: 1.8rem;
-    margin-bottom: 0.5rem;
+    margin: 0;
     color: var(--text);
+}
+
+.wait-message {
+    font-size: 0.9rem;
+    color: var(--accent);
+    font-weight: 500;
+    font-style: italic;
 }
 
 /* Progress indicator */
@@ -358,10 +372,11 @@ main {
     justify-content: space-between;
     align-items: center;
     transition: background 0.3s;
+    background: rgba(178, 152, 120, 0.5);
 }
 
 .response-header:hover {
-    background: var(--bg);
+    background: rgba(178, 152, 120, 0.7);
 }
 
 .judge-info h3 {
@@ -504,7 +519,7 @@ footer .disclaimer {
     text-align: center;
     margin: 0 0 0.5rem 0;
     padding: 0.5rem;
-    background: rgba(178, 152, 120, 0.5);
+    background: rgba(225, 225, 255, 0.2);
     border-radius: 8px;
 }
 
@@ -525,7 +540,7 @@ footer .disclaimer {
 
 /* Response Summary */
 .response-summary {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(245, 245, 255, 0.2);
     border-radius: 12px;
     padding: 1.5rem;
     margin-bottom: 2rem;
@@ -567,6 +582,7 @@ footer .disclaimer {
     padding: 0.25rem 0.5rem;
     border-radius: 4px;
     margin-left: 0.5rem;
+    background: rgba(178, 152, 120, 0.5);
 }
 
 /* Support level colors in response cards */
@@ -625,6 +641,15 @@ footer .disclaimer {
     white-space: pre-wrap;
     line-height: 1.6;
     margin-bottom: 1rem;
+}
+
+.brief-response, .full-response {
+    padding: 1rem 1.5rem;
+}
+
+.expand-btn, .collapse-btn {
+    display: block;
+    margin: 0;
 }
 
 /* Bar segment colors - ensure all support levels work in proportional bar */

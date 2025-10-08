@@ -11,6 +11,8 @@ queries.db
 queries_empty.db
 *.log
 judge*.json
+*.zip
+scotus/hold/
 
 # Elastic Beanstalk Files
 .elasticbeanstalk/*

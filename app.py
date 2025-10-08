@@ -135,46 +135,38 @@ def log_response(ip_address: str, query_id: int, judge_name: str, judge_title: s
 
 
 def analyze_support_level(response: str, question: str = "") -> str:
-    """Analyze the response to determine support level using OpenAI."""
-    if not client:
-        return 'neutral'
-    
+    """Analyze the response to determine support level based on Outcome field."""
     try:
-        # Extract the last paragraph for sentiment analysis
-        paragraphs = response.strip().split('\n\n')
-        last_paragraph = paragraphs[-1] if paragraphs else response
-        
-        system_prompt = """You are analyzing a Supreme Court Justice's response to determine their position. 
-        
-        Focus ONLY on the last paragraph provided, as it contains the Justice's final conclusion.
-        
-        Determine if they are:
-        - 'strongly_support': Clearly and enthusiastically in favor of the position/action in question
-        - 'support': Generally in favor but with some reservations or conditions
-        - 'neutral': Balanced view or unclear position
-        - 'oppose': Generally against the position/action in question
-        - 'strongly_oppose': Clearly and firmly against the position/action in question
-        
-        Important: If they say "No" to a question asking if something should be allowed/permitted, that means they OPPOSE it.
-        If they say "Yes" to a question asking if something should be allowed/permitted, that means they SUPPORT it.
-        
-        Respond with ONLY one of these five words: strongly_support, support, neutral, oppose, strongly_oppose"""
-        
-        user_content = f"Question: {question}\n\nJustice's Final Conclusion: {last_paragraph}" if question else f"Justice's Final Conclusion: {last_paragraph}"
-        
-        analysis = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_content}
-            ],
-            temperature=0.1,
-            max_tokens=10
-        )
-        level = analysis.choices[0].message.content.strip().lower()
-        if level in ['strongly_support', 'support', 'neutral', 'oppose', 'strongly_oppose']:
-            return level
-        return 'neutral'
+        # Parse the first line to extract Outcome
+        first_line = response.strip().split('\n')[0] if response else ""
+
+        # Extract Outcome value
+        outcome = 'neutral'
+        if 'Outcome:' in first_line:
+            # Extract text after "Outcome:" and before the next " - " or end of relevant section
+            outcome_text = first_line.split('Outcome:')[1].strip()
+            # Get just the outcome value (before " - Certainty" or similar)
+            outcome_value = outcome_text.split(' - ')[0].strip().lower()
+
+            # Map outcomes to support levels
+            # Strike Down = strongly_oppose (striking down the law/action)
+            # Uphold = strongly_support (upholding the law/action)
+            # Remand = support (sending back, generally favorable)
+            # Dismiss - Jurisdictional = neutral (no decision on merits)
+            # Dismiss - Political Question = neutral (avoiding decision)
+
+            if 'strike down' in outcome_value:
+                outcome = 'strongly_oppose'
+            elif 'uphold' in outcome_value:
+                outcome = 'strongly_support'
+            elif 'remand' in outcome_value:
+                outcome = 'support'
+            elif 'dismiss' in outcome_value:
+                outcome = 'neutral'
+            else:
+                outcome = 'neutral'
+
+        return outcome
     except Exception as e:
         print(f"Error analyzing support level: {e}")
         return 'neutral'
