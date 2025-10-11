@@ -1,6 +1,7 @@
 let judges = [];
 let selectedJudges = new Set();
 let queriesRemaining = 5;
+let isProcessing = false; // Flag to prevent button re-enabling during processing
 
 // DOM elements - will be found after DOM loads
 let judgesGrid, questionInput, askButton, loading, responsesSection, responsesContainer, queryStatus, selectAllButton;
@@ -130,6 +131,12 @@ function toggleSelectAll() {
 function updateAskButton() {
     if (!questionInput || !askButton) return;
     
+    // Don't enable button if we're currently processing
+    if (isProcessing) {
+        askButton.disabled = true;
+        return;
+    }
+    
     const hasQuestion = questionInput.value.trim().length > 0;
     const hasSelectedJudges = selectedJudges.size > 0;
     
@@ -139,18 +146,36 @@ function updateAskButton() {
 
 // Check query limit
 async function checkQueryLimit() {
-    updateQueryStatus();
+    try {
+        console.log('Checking query limit...');
+        const response = await fetch(`${window.location.origin}/api/check-limit`);
+        const data = await response.json();
+        console.log('Query limit response:', data);
+        
+        queriesRemaining = data.remaining;
+        console.log('Updated queriesRemaining to:', queriesRemaining);
+        updateQueryStatus();
+    } catch (error) {
+        console.error('Error checking query limit:', error);
+    }
 }
 
 // Update query status display
 function updateQueryStatus() {
+    console.log('updateQueryStatus called with queriesRemaining:', queriesRemaining);
     const statusElement = document.getElementById('queries-remaining');
     if (!statusElement) {
         console.log('queries-remaining element not found');
         return;
     }
 
-    statusElement.innerHTML = 'Please limit to 5 queries';
+    if (queriesRemaining === 0) {
+        statusElement.innerHTML = '<span class="limit-reached">No more queries remaining (5/5 used)</span>';
+        askButton.disabled = true;
+    } else {
+        statusElement.innerHTML = `Queries remaining: <span class="queries-count">${queriesRemaining}/5</span>`;
+    }
+    console.log('Updated status element to:', statusElement.innerHTML);
 }
 
 // Handle ask question
@@ -168,6 +193,7 @@ async function handleAskQuestion() {
     }
     
     askButton.disabled = true;
+    isProcessing = true; // Set processing flag
     loading.style.display = 'flex';
     responsesSection.style.display = 'none';
 
@@ -210,6 +236,7 @@ async function handleAskQuestion() {
         console.error('Error querying judges:', error);
         showAlert('An error occurred while querying the Justices', 'error');
     } finally {
+        isProcessing = false; // Clear processing flag
         askButton.disabled = false;
         loading.style.display = 'none';
     }
@@ -257,6 +284,9 @@ async function handleAsyncProcessing(jobId, question) {
         return;
     }
     
+    // Ensure button stays disabled during async processing
+    askButton.disabled = true;
+    
     // Clear responses and show the section
     responsesContainer.innerHTML = '';
     responsesSection.style.display = 'block';
@@ -288,11 +318,15 @@ async function handleAsyncProcessing(jobId, question) {
             if (progressData.status === 'completed') {
                 clearInterval(pollInterval);
                 hideProgressIndicator();
+                isProcessing = false; // Clear processing flag
+                askButton.disabled = false; // Re-enable button when done
             }
         } catch (error) {
             console.error('Error checking progress:', error);
             clearInterval(pollInterval);
             hideProgressIndicator();
+            isProcessing = false; // Clear processing flag
+            askButton.disabled = false; // Re-enable button on error
         }
     }, 5000); // Poll every 5 seconds
 }
