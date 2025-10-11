@@ -340,16 +340,16 @@ function getTextColorForOutcome(outcome) {
 // Create summary legend showing all possible outcomes
 function createSummaryLegend(container) {
     const outcomes = [
-        { key: 'affirmed', label: 'Affirmed' },
-        { key: 'reversed', label: 'Reversed' },
-        { key: 'vacated', label: 'Vacated' },
-        { key: 'remanded', label: 'Remanded' },
-        { key: 'denied', label: 'Denied' },
-        { key: 'granted', label: 'Granted' },
-        { key: 'stayed', label: 'Stayed' },
-        { key: 'reinstated', label: 'Reinstated' },
-        { key: 'dismissed', label: 'Dismissed' },
-        { key: 'modified', label: 'Modified' }
+        { key: 'affirmed', label: 'Affirmed', description: 'Lower court upheld' },
+        { key: 'reversed', label: 'Reversed', description: 'Lower court overturned' },
+        { key: 'vacated', label: 'Vacated', description: 'Judgment nullified' },
+        { key: 'remanded', label: 'Remanded', description: 'Sent back to lower court' },
+        { key: 'denied', label: 'Denied', description: 'Review refused' },
+        { key: 'granted', label: 'Granted', description: 'Review accepted' },
+        { key: 'stayed', label: 'Stayed', description: 'Temporarily halted' },
+        { key: 'reinstated', label: 'Reinstated', description: 'Lower ruling restored' },
+        { key: 'dismissed', label: 'Dismissed', description: 'Case closed without decision' },
+        { key: 'modified', label: 'Modified', description: 'Adjusted, not reversed' }
     ];
 
     const legendDiv = document.createElement('div');
@@ -357,7 +357,8 @@ function createSummaryLegend(container) {
 
     outcomes.forEach(outcome => {
         const legendItem = document.createElement('div');
-        legendItem.className = 'legend-item';
+        legendItem.className = `legend-item ${outcome.key}`;
+        legendItem.setAttribute('data-tooltip', outcome.description);
         legendItem.innerHTML = `
             <div class="legend-color ${outcome.key}"></div>
             <span>${outcome.label}</span>

@@ -749,6 +749,37 @@ footer .disclaimer {
     gap: 0.5rem;
     font-size: 0.85rem;
     color: var(--text);
+    position: relative;
+}
+
+.legend-item[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 8px;
+    padding: 6px 12px;
+    background: var(--legend-bg, #333);
+    color: var(--legend-text, white);
+    border-radius: 6px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    border: 2px solid var(--legend-border, #333);
+}
+
+.legend-item[data-tooltip]:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 2px;
+    border: 6px solid transparent;
+    border-top-color: var(--legend-border, #333);
+    z-index: 1000;
 }
 
 .legend-color {
@@ -800,6 +831,73 @@ footer .disclaimer {
 
 .legend-color.unknown {
     background: var(--unknown);
+}
+
+/* Legend item tooltip colors */
+.legend-item.affirmed {
+    --legend-bg: var(--affirmed);
+    --legend-border: var(--affirmed);
+    --legend-text: black;
+}
+
+.legend-item.reversed {
+    --legend-bg: var(--reversed);
+    --legend-border: var(--reversed);
+    --legend-text: white;
+}
+
+.legend-item.vacated {
+    --legend-bg: var(--vacated);
+    --legend-border: var(--vacated);
+    --legend-text: black;
+}
+
+.legend-item.remanded {
+    --legend-bg: var(--remanded);
+    --legend-border: var(--remanded);
+    --legend-text: white;
+}
+
+.legend-item.denied {
+    --legend-bg: var(--denied);
+    --legend-border: var(--denied);
+    --legend-text: white;
+}
+
+.legend-item.granted {
+    --legend-bg: var(--granted);
+    --legend-border: var(--granted);
+    --legend-text: black;
+}
+
+.legend-item.stayed {
+    --legend-bg: var(--stayed);
+    --legend-border: var(--stayed);
+    --legend-text: white;
+}
+
+.legend-item.reinstated {
+    --legend-bg: var(--reinstated);
+    --legend-border: var(--reinstated);
+    --legend-text: black;
+}
+
+.legend-item.dismissed {
+    --legend-bg: var(--dismissed);
+    --legend-border: var(--dismissed);
+    --legend-text: white;
+}
+
+.legend-item.modified {
+    --legend-bg: var(--modified);
+    --legend-border: var(--modified);
+    --legend-text: black;
+}
+
+.legend-item.unknown {
+    --legend-bg: var(--unknown);
+    --legend-border: var(--unknown);
+    --legend-text: black;
 }
 
 /* Responsive */
