@@ -63,41 +63,29 @@ def log_response(ip_address: str, query_id: str, judge_name: str, judge_title: s
 
 
 def analyze_support_level(response: str, question: str = "") -> str:
-    """Analyze the response to determine support level based on Outcome field."""
+    """Analyze the response to extract the Outcome disposition."""
     try:
         # Parse the first line to extract Outcome
         first_line = response.strip().split('\n')[0] if response else ""
 
         # Extract Outcome value
-        outcome = 'neutral'
+        outcome = 'unknown'
         if 'Outcome:' in first_line:
             # Extract text after "Outcome:" and before the next " - " or end of relevant section
             outcome_text = first_line.split('Outcome:')[1].strip()
             # Get just the outcome value (before " - Certainty" or similar)
-            outcome_value = outcome_text.split(' - ')[0].strip().lower()
+            outcome_value = outcome_text.split(' - ')[0].strip()
 
-            # Map outcomes to support levels
-            # Strike Down = strongly_oppose (striking down the law/action)
-            # Uphold = strongly_support (upholding the law/action)
-            # Remand = support (sending back, generally favorable)
-            # Dismiss - Jurisdictional = neutral (no decision on merits)
-            # Dismiss - Political Question = neutral (avoiding decision)
+            # Remove any parenthetical descriptions and normalize
+            if '(' in outcome_value:
+                outcome_value = outcome_value.split('(')[0].strip()
 
-            if 'strike down' in outcome_value:
-                outcome = 'strongly_oppose'
-            elif 'uphold' in outcome_value:
-                outcome = 'strongly_support'
-            elif 'remand' in outcome_value:
-                outcome = 'support'
-            elif 'dismiss' in outcome_value:
-                outcome = 'neutral'
-            else:
-                outcome = 'neutral'
+            outcome = outcome_value.lower()
 
         return outcome
     except Exception as e:
-        print(f"Error analyzing support level: {e}")
-        return 'neutral'
+        print(f"Error analyzing outcome: {e}")
+        return 'unknown'
 
 
 def query_judge(judge_name: str, vector_store_id: str, instructions: str, question: str, model: str = "gpt-5-nano") -> str:

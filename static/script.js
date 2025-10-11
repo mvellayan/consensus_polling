@@ -331,19 +331,56 @@ async function handleAsyncProcessing(jobId, question) {
     }, 5000); // Poll every 5 seconds
 }
 
+// Helper function to determine text color based on outcome
+function getTextColorForOutcome(outcome) {
+    const darkTextOutcomes = ['affirmed', 'vacated', 'granted', 'reinstated', 'modified'];
+    return darkTextOutcomes.includes(outcome) ? 'black' : 'white';
+}
+
+// Create summary legend showing all possible outcomes
+function createSummaryLegend(container) {
+    const outcomes = [
+        { key: 'affirmed', label: 'Affirmed' },
+        { key: 'reversed', label: 'Reversed' },
+        { key: 'vacated', label: 'Vacated' },
+        { key: 'remanded', label: 'Remanded' },
+        { key: 'denied', label: 'Denied' },
+        { key: 'granted', label: 'Granted' },
+        { key: 'stayed', label: 'Stayed' },
+        { key: 'reinstated', label: 'Reinstated' },
+        { key: 'dismissed', label: 'Dismissed' },
+        { key: 'modified', label: 'Modified' }
+    ];
+
+    const legendDiv = document.createElement('div');
+    legendDiv.className = 'summary-legend';
+
+    outcomes.forEach(outcome => {
+        const legendItem = document.createElement('div');
+        legendItem.className = 'legend-item';
+        legendItem.innerHTML = `
+            <div class="legend-color ${outcome.key}"></div>
+            <span>${outcome.label}</span>
+        `;
+        legendDiv.appendChild(legendItem);
+    });
+
+    container.appendChild(legendDiv);
+}
+
 // Update summary display in real-time
 function updateSummaryDisplay(summary) {
     const summaryContent = document.getElementById('summary-content');
     if (!summaryContent) return;
-    
+
     if (!summary || Object.keys(summary).length === 0) {
         summaryContent.innerHTML = 'Waiting for responses...';
         return;
     }
-    
+
     // Calculate total judges
     const totalJudges = Object.values(summary).reduce((sum, judges) => sum + judges.length, 0);
-    
+
     // Create proportional bar
     const barDiv = document.createElement('div');
     barDiv.className = 'summary-bar';
@@ -356,36 +393,38 @@ function updateSummaryDisplay(summary) {
         margin: 1rem auto;
         border: 1px solid #ccc;
     `;
-    
-    // Add segments for each support level
-    Object.entries(summary).forEach(([level, judges]) => {
-        const percentage = (judges.length / totalJudges) * 100;
+
+    // Add segments for each outcome
+    Object.entries(summary).forEach(([outcome, judges]) => {
         const segment = document.createElement('div');
-        segment.className = `bar-segment ${level}`;
-        
+        segment.className = `bar-segment ${outcome}`;
+
         // Get last names only
         const lastNames = judges.map(name => name.split(' ').pop());
-        
+
         segment.style.cssText = `
             flex: ${judges.length};
-            background: var(--${level.replace('_', '-')});
+            background: var(--${outcome});
             display: flex;
             align-items: center;
             justify-content: center;
-            color: ${level.includes('neutral') || level.includes('strongly-oppose') ? 'white' : 'black'};
+            color: ${getTextColorForOutcome(outcome)};
             font-size: 0.8rem;
             font-weight: 600;
             padding: 0 4px;
             text-align: center;
             overflow: hidden;
         `;
-        
+
         segment.innerHTML = `${judges.length} ${lastNames.join(', ')}`;
         barDiv.appendChild(segment);
     });
-    
+
     summaryContent.innerHTML = '';
     summaryContent.appendChild(barDiv);
+
+    // Add legend
+    createSummaryLegend(summaryContent);
 }
 
 // Update responses display as they arrive
@@ -424,32 +463,32 @@ function updateResponsesDisplay(responses) {
 // Display responses
 function displayResponses(data) {
     responsesContainer.innerHTML = '';
-    
+
     if (!data.responses || data.responses.length === 0) {
         responsesContainer.innerHTML = '<p>No responses received.</p>';
         responsesSection.style.display = 'block';
         return;
     }
-    
-    // Create summary by support level
+
+    // Create summary by outcome
     const summary = {};
     data.responses.forEach(response => {
-        const level = response.support_level || 'neutral';
-        if (!summary[level]) {
-            summary[level] = [];
+        const outcome = response.support_level || 'unknown';
+        if (!summary[outcome]) {
+            summary[outcome] = [];
         }
-        summary[level].push(response.judge_title);
+        summary[outcome].push(response.judge_title);
     });
-    
+
     // Display summary
     if (Object.keys(summary).length > 0) {
         const summaryDiv = document.createElement('div');
         summaryDiv.className = 'response-summary';
         summaryDiv.innerHTML = '<h3>Response Summary</h3>';
-        
+
         // Calculate total judges
         const totalJudges = Object.values(summary).reduce((sum, judges) => sum + judges.length, 0);
-        
+
         // Create proportional bar
         const barDiv = document.createElement('div');
         barDiv.className = 'summary-bar';
@@ -462,34 +501,43 @@ function displayResponses(data) {
             margin: 1rem auto;
             border: 1px solid #ccc;
         `;
-        
-        // Add segments for each support level
-        Object.entries(summary).forEach(([level, judges]) => {
+
+        // Add segments for each outcome
+        Object.entries(summary).forEach(([outcome, judges]) => {
             const segment = document.createElement('div');
-            segment.className = `bar-segment ${level}`;
-            
+            segment.className = `bar-segment ${outcome}`;
+
             // Get last names only
             const lastNames = judges.map(name => name.split(' ').pop());
-            
+
             segment.style.cssText = `
                 flex: ${judges.length};
-                background: var(--${level.replace('_', '-')});
+                background: var(--${outcome});
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                color: ${level.includes('neutral') || level.includes('strongly-oppose') ? 'white' : 'black'};
+                color: ${getTextColorForOutcome(outcome)};
                 font-size: 0.8rem;
                 font-weight: 600;
                 padding: 0 4px;
                 text-align: center;
                 overflow: hidden;
             `;
-            
+
             segment.innerHTML = `${judges.length} ${lastNames.join(', ')}`;
             barDiv.appendChild(segment);
         });
-        
+
         summaryDiv.appendChild(barDiv);
+
+        // Add summary content div for legend
+        const summaryContent = document.createElement('div');
+        summaryContent.id = 'summary-content-static';
+        summaryDiv.appendChild(summaryContent);
+
+        // Add legend
+        createSummaryLegend(summaryContent);
+
         responsesContainer.appendChild(summaryDiv);
     }
     
