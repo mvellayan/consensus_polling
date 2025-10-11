@@ -1,5 +1,5 @@
 data/*
-scotus/*.json
+scotus/**
 .idea/
 .claude/
 .env

@@ -8,6 +8,7 @@ import time
 import threading
 import uuid
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from flask import Flask, render_template, request, jsonify
 from openai import OpenAI
 from typing import List, Dict
@@ -313,8 +314,53 @@ def get_progress(job_id):
 
     return jsonify(progress_data)
 
+def process_single_judge(judge_name, judge_assistants, question, query_id, ip_address):
+    """Process a single judge and return the response."""
+    if judge_name not in judge_assistants:
+        return None
+
+    judge_info = judge_assistants[judge_name]
+    try:
+        response = query_judge(
+            judge_name=judge_name,
+            vector_store_id=judge_info['vector_store_id'],
+            instructions=judge_info['instructions'],
+            question=question
+        )
+        support_level = analyze_support_level(response, question)
+        brief = response[:150] + '...' if len(response) > 150 else response
+        log_response(ip_address, query_id, judge_name, judge_info['judge_title'], response, support_level)
+
+        return {
+            'judge_name': judge_name,
+            'judge_title': judge_info['judge_title'],
+            'brief': brief,
+            'full_response': response,
+            'support_level': support_level
+        }
+    except Exception as e:
+        return {
+            'judge_name': judge_name,
+            'judge_title': judge_info['judge_title'],
+            'brief': f'Error: {str(e)}',
+            'full_response': f'Error: {str(e)}',
+            'support_level': 'unknown'
+        }
+
+
+def calculate_summary(responses):
+    """Calculate summary of outcomes from responses."""
+    summary = {}
+    for response in responses:
+        outcome = response.get('support_level', 'unknown')
+        if outcome not in summary:
+            summary[outcome] = []
+        summary[outcome].append(response.get('judge_title', ''))
+    return summary
+
+
 def process_judges_async(job_id, question, judge_names, ip_address):
-    """Process judges asynchronously with progress updates."""
+    """Process judges in parallel with progress updates."""
     query_id = log_query(ip_address, question)
     judge_assistants = load_judge_assistants()
 
@@ -323,44 +369,39 @@ def process_judges_async(job_id, question, judge_names, ip_address):
     if not progress:
         return
 
-    for i, judge_name in enumerate(judge_names):
-        if judge_name not in judge_assistants:
-            progress['completed'] = i + 1
+    # Use ThreadPoolExecutor to process all judges in parallel
+    with ThreadPoolExecutor(max_workers=9) as executor:
+        # Submit all judge queries
+        future_to_judge = {
+            executor.submit(process_single_judge, judge_name, judge_assistants, question, query_id, ip_address): judge_name
+            for judge_name in judge_names
+        }
+
+        # Process results as they complete
+        for future in as_completed(future_to_judge):
+            judge_name = future_to_judge[future]
+            try:
+                result = future.result()
+                if result:
+                    progress['responses'].append(result)
+            except Exception as e:
+                print(f"Error processing judge {judge_name}: {str(e)}")
+                progress['responses'].append({
+                    'judge_name': judge_name,
+                    'judge_title': judge_name.title(),
+                    'brief': f'Error: {str(e)}',
+                    'full_response': f'Error: {str(e)}',
+                    'support_level': 'unknown'
+                })
+
+            # Update progress after each judge completes
+            progress['completed'] = len(progress['responses'])
+            progress['summary'] = calculate_summary(progress['responses'])
             dynamodb_util.save_job_progress(job_id, progress)
-            continue
 
-        judge_info = judge_assistants[judge_name]
-        try:
-            response = query_judge(
-                judge_name=judge_name,
-                vector_store_id=judge_info['vector_store_id'],
-                instructions=judge_info['instructions'],
-                question=question
-            )
-            support_level = analyze_support_level(response, question)
-            brief = response[:150] + '...' if len(response) > 150 else response
-            log_response(ip_address, query_id, judge_name, judge_info['judge_title'], response, support_level)
-
-            progress['responses'].append({
-                'judge_name': judge_name,
-                'judge_title': judge_info['judge_title'],
-                'brief': brief,
-                'full_response': response,
-                'support_level': support_level
-            })
-        except Exception as e:
-            progress['responses'].append({
-                'judge_name': judge_name,
-                'judge_title': judge_info['judge_title'],
-                'brief': f'Error: {str(e)}',
-                'full_response': f'Error: {str(e)}',
-                'support_level': 'neutral'
-            })
-
-        progress['completed'] = i + 1
-        dynamodb_util.save_job_progress(job_id, progress)
-
+    # Mark as completed
     progress['status'] = 'completed'
+    progress['summary'] = calculate_summary(progress['responses'])
     dynamodb_util.save_job_progress(job_id, progress)
 
 

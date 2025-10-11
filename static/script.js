@@ -300,7 +300,7 @@ async function handleAsyncProcessing(jobId, question) {
     summaryDiv.innerHTML = '<h3>Response Summary</h3><div id="summary-content">Waiting for responses...</div>';
     responsesContainer.appendChild(summaryDiv);
 
-    // Poll for progress every 5 seconds
+    // Poll for progress every 2 seconds for faster feedback
     const pollInterval = setInterval(async () => {
         try {
             const progressResponse = await fetch(`${window.location.origin}/api/progress/${jobId}`);
@@ -328,7 +328,7 @@ async function handleAsyncProcessing(jobId, question) {
             isProcessing = false; // Clear processing flag
             askButton.disabled = false; // Re-enable button on error
         }
-    }, 5000); // Poll every 5 seconds
+    }, 2000); // Poll every 2 seconds
 }
 
 // Helper function to determine text color based on outcome
