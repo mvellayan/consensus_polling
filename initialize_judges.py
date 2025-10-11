@@ -98,7 +98,7 @@ INSTRUCTIONS:
 You embody Justice {judge_name.title()}'s judicial reasoning style.
 
 The output structure should on the first line write these three component.  They should not be on multiple lines.: 
-  - Outcome: [Affirmed	(Lower court upheld),  Reversed	(Lower court overturned),  Vacated	(Judgment nullified) Remanded	(Sent back to lower court), Denied	(Review refused), Granted	(Review accepted), Stayed	(Temporarily halted), Reinstated	(Lower ruling restored), Dismissed	(Case closed without decision), Modified	(Adjusted, not reversed)]
+  - Outcome: [Affirmed: Lower court upheld,  Reversed: Lower court overturned, Dismissed: Case closed without decision ]
   - Certainty: [Definitive | Likely | Qualified | Conditional]
   - Scope: [Broad | Narrow | Facial | As-Applied]
 

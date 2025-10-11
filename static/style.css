@@ -22,18 +22,11 @@
     --oppose: #fb923c;
     --strongly-oppose: #ef4444;
 
-    /* Outcome disposition colors */
-    --affirmed: #22c55e;
-    --reversed: #ef4444;
-    --vacated: #f97316;
-    --remanded: #3b82f6;
-    --denied: #64748b;
-    --granted: #86efac;
-    --stayed: #a855f7;
-    --reinstated: #14b8a6;
-    --dismissed: #94a3b8;
-    --modified: #eab308;
-    --unknown: #d1d5db;
+    /* Outcome disposition colors (3 states) */
+    --affirmed: #22c55e;     /* Green - Lower court upheld */
+    --reversed: #ef4444;     /* Red - Lower court overturned */
+    --dismissed: #94a3b8;    /* Gray - Case closed without decision */
+    --unknown: #d1d5db;      /* Light gray - Unknown/error state */
 }
 
 body {
@@ -558,6 +551,8 @@ footer .disclaimer {
     padding: 1.5rem;
     margin-bottom: 2rem;
     backdrop-filter: blur(10px);
+    overflow: visible;
+    position: relative;
 }
 
 .response-summary h3 {
@@ -687,6 +682,10 @@ footer .disclaimer {
 }
 
 /* Bar segment colors for outcome dispositions */
+.bar-segment[data-tooltip] {
+    cursor: default;
+}
+
 .bar-segment.affirmed {
     background: var(--affirmed) !important;
 }
@@ -695,36 +694,8 @@ footer .disclaimer {
     background: var(--reversed) !important;
 }
 
-.bar-segment.vacated {
-    background: var(--vacated) !important;
-}
-
-.bar-segment.remanded {
-    background: var(--remanded) !important;
-}
-
-.bar-segment.denied {
-    background: var(--denied) !important;
-}
-
-.bar-segment.granted {
-    background: var(--granted) !important;
-}
-
-.bar-segment.stayed {
-    background: var(--stayed) !important;
-}
-
-.bar-segment.reinstated {
-    background: var(--reinstated) !important;
-}
-
 .bar-segment.dismissed {
     background: var(--dismissed) !important;
-}
-
-.bar-segment.modified {
-    background: var(--modified) !important;
 }
 
 .bar-segment.unknown {
@@ -752,7 +723,8 @@ footer .disclaimer {
     position: relative;
 }
 
-.legend-item[data-tooltip]:hover::after {
+.legend-item[data-tooltip]:hover::after,
+.bar-segment[data-tooltip]:hover::after {
     content: attr(data-tooltip);
     position: absolute;
     bottom: 100%;
@@ -770,7 +742,8 @@ footer .disclaimer {
     border: 2px solid var(--legend-border, #333);
 }
 
-.legend-item[data-tooltip]:hover::before {
+.legend-item[data-tooltip]:hover::before,
+.bar-segment[data-tooltip]:hover::before {
     content: '';
     position: absolute;
     bottom: 100%;
@@ -797,104 +770,38 @@ footer .disclaimer {
     background: var(--reversed);
 }
 
-.legend-color.vacated {
-    background: var(--vacated);
-}
-
-.legend-color.remanded {
-    background: var(--remanded);
-}
-
-.legend-color.denied {
-    background: var(--denied);
-}
-
-.legend-color.granted {
-    background: var(--granted);
-}
-
-.legend-color.stayed {
-    background: var(--stayed);
-}
-
-.legend-color.reinstated {
-    background: var(--reinstated);
-}
-
 .legend-color.dismissed {
     background: var(--dismissed);
-}
-
-.legend-color.modified {
-    background: var(--modified);
 }
 
 .legend-color.unknown {
     background: var(--unknown);
 }
 
-/* Legend item tooltip colors */
-.legend-item.affirmed {
+/* Legend item and bar segment tooltip colors */
+.legend-item.affirmed,
+.bar-segment.affirmed {
     --legend-bg: var(--affirmed);
     --legend-border: var(--affirmed);
     --legend-text: black;
 }
 
-.legend-item.reversed {
+.legend-item.reversed,
+.bar-segment.reversed {
     --legend-bg: var(--reversed);
     --legend-border: var(--reversed);
     --legend-text: white;
 }
 
-.legend-item.vacated {
-    --legend-bg: var(--vacated);
-    --legend-border: var(--vacated);
-    --legend-text: black;
-}
-
-.legend-item.remanded {
-    --legend-bg: var(--remanded);
-    --legend-border: var(--remanded);
-    --legend-text: white;
-}
-
-.legend-item.denied {
-    --legend-bg: var(--denied);
-    --legend-border: var(--denied);
-    --legend-text: white;
-}
-
-.legend-item.granted {
-    --legend-bg: var(--granted);
-    --legend-border: var(--granted);
-    --legend-text: black;
-}
-
-.legend-item.stayed {
-    --legend-bg: var(--stayed);
-    --legend-border: var(--stayed);
-    --legend-text: white;
-}
-
-.legend-item.reinstated {
-    --legend-bg: var(--reinstated);
-    --legend-border: var(--reinstated);
-    --legend-text: black;
-}
-
-.legend-item.dismissed {
+.legend-item.dismissed,
+.bar-segment.dismissed {
     --legend-bg: var(--dismissed);
     --legend-border: var(--dismissed);
     --legend-text: white;
 }
 
-.legend-item.modified {
-    --legend-bg: var(--modified);
-    --legend-border: var(--modified);
-    --legend-text: black;
-}
-
-.legend-item.unknown {
+.legend-item.unknown,
+.bar-segment.unknown {
     --legend-bg: var(--unknown);
     --legend-border: var(--unknown);
     --legend-text: black;

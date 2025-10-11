@@ -333,8 +333,18 @@ async function handleAsyncProcessing(jobId, question) {
 
 // Helper function to determine text color based on outcome
 function getTextColorForOutcome(outcome) {
-    const darkTextOutcomes = ['affirmed', 'vacated', 'granted', 'reinstated', 'modified'];
+    const darkTextOutcomes = ['affirmed'];
     return darkTextOutcomes.includes(outcome) ? 'black' : 'white';
+}
+
+// Helper function to get outcome description
+function getOutcomeDescription(outcome) {
+    const descriptions = {
+        'affirmed': 'Lower court upheld',
+        'reversed': 'Lower court overturned',
+        'dismissed': 'Case closed without decision'
+    };
+    return descriptions[outcome] || '';
 }
 
 // Create summary legend showing all possible outcomes
@@ -342,14 +352,7 @@ function createSummaryLegend(container) {
     const outcomes = [
         { key: 'affirmed', label: 'Affirmed', description: 'Lower court upheld' },
         { key: 'reversed', label: 'Reversed', description: 'Lower court overturned' },
-        { key: 'vacated', label: 'Vacated', description: 'Judgment nullified' },
-        { key: 'remanded', label: 'Remanded', description: 'Sent back to lower court' },
-        { key: 'denied', label: 'Denied', description: 'Review refused' },
-        { key: 'granted', label: 'Granted', description: 'Review accepted' },
-        { key: 'stayed', label: 'Stayed', description: 'Temporarily halted' },
-        { key: 'reinstated', label: 'Reinstated', description: 'Lower ruling restored' },
-        { key: 'dismissed', label: 'Dismissed', description: 'Case closed without decision' },
-        { key: 'modified', label: 'Modified', description: 'Adjusted, not reversed' }
+        { key: 'dismissed', label: 'Dismissed', description: 'Case closed without decision' }
     ];
 
     const legendDiv = document.createElement('div');
@@ -379,6 +382,14 @@ function updateSummaryDisplay(summary) {
         return;
     }
 
+    // Debug logging - show grouping
+    console.log('=== SUMMARY GROUPING ===');
+    console.log('Summary object:', JSON.stringify(summary, null, 2));
+    Object.entries(summary).forEach(([outcome, judges]) => {
+        console.log(`${judges.length} ${outcome}: [${judges.join(', ')}]`);
+    });
+    console.log('========================');
+
     // Calculate total judges
     const totalJudges = Object.values(summary).reduce((sum, judges) => sum + judges.length, 0);
 
@@ -390,8 +401,8 @@ function updateSummaryDisplay(summary) {
         width: 80%;
         height: 40px;
         border-radius: 8px;
-        overflow: hidden;
-        margin: 1rem auto;
+        overflow: visible;
+        margin: 1rem auto 3rem auto;
         border: 1px solid #ccc;
     `;
 
@@ -399,6 +410,7 @@ function updateSummaryDisplay(summary) {
     Object.entries(summary).forEach(([outcome, judges]) => {
         const segment = document.createElement('div');
         segment.className = `bar-segment ${outcome}`;
+        segment.setAttribute('data-tooltip', getOutcomeDescription(outcome));
 
         // Get last names only
         const lastNames = judges.map(name => name.split(' ').pop());
@@ -415,6 +427,7 @@ function updateSummaryDisplay(summary) {
             padding: 0 4px;
             text-align: center;
             overflow: hidden;
+            position: relative;
         `;
 
         segment.innerHTML = `${judges.length} ${lastNames.join(', ')}`;
@@ -473,13 +486,23 @@ function displayResponses(data) {
 
     // Create summary by outcome
     const summary = {};
+    console.log('=== BUILDING SUMMARY FROM RESPONSES ===');
     data.responses.forEach(response => {
         const outcome = response.support_level || 'unknown';
+        console.log(`Judge: ${response.judge_title} -> Outcome: '${outcome}' (len=${outcome.length})`);
         if (!summary[outcome]) {
             summary[outcome] = [];
         }
         summary[outcome].push(response.judge_title);
     });
+
+    // Debug logging - show final grouping
+    console.log('=== FINAL SUMMARY GROUPING ===');
+    console.log('Summary object:', JSON.stringify(summary, null, 2));
+    Object.entries(summary).forEach(([outcome, judges]) => {
+        console.log(`${judges.length} ${outcome}: [${judges.join(', ')}]`);
+    });
+    console.log('===================================');
 
     // Display summary
     if (Object.keys(summary).length > 0) {
@@ -498,8 +521,8 @@ function displayResponses(data) {
             width: 80%;
             height: 40px;
             border-radius: 8px;
-            overflow: hidden;
-            margin: 1rem auto;
+            overflow: visible;
+            margin: 1rem auto 3rem auto;
             border: 1px solid #ccc;
         `;
 
@@ -507,6 +530,7 @@ function displayResponses(data) {
         Object.entries(summary).forEach(([outcome, judges]) => {
             const segment = document.createElement('div');
             segment.className = `bar-segment ${outcome}`;
+            segment.setAttribute('data-tooltip', getOutcomeDescription(outcome));
 
             // Get last names only
             const lastNames = judges.map(name => name.split(' ').pop());
@@ -523,6 +547,7 @@ function displayResponses(data) {
                 padding: 0 4px;
                 text-align: center;
                 overflow: hidden;
+                position: relative;
             `;
 
             segment.innerHTML = `${judges.length} ${lastNames.join(', ')}`;

@@ -68,24 +68,28 @@ def analyze_support_level(response: str, question: str = "") -> str:
     try:
         # Parse the first line to extract Outcome
         first_line = response.strip().split('\n')[0] if response else ""
+        first_line_lower = first_line.lower()
 
-        # Extract Outcome value
-        outcome = 'unknown'
-        if 'Outcome:' in first_line:
-            # Extract text after "Outcome:" and before the next " - " or end of relevant section
-            outcome_text = first_line.split('Outcome:')[1].strip()
-            # Get just the outcome value (before " - Certainty" or similar)
-            outcome_value = outcome_text.split(' - ')[0].strip()
+        print(f"DEBUG [analyze_support_level]: First line: '{first_line}'")
 
-            # Remove any parenthetical descriptions and normalize
-            if '(' in outcome_value:
-                outcome_value = outcome_value.split('(')[0].strip()
+        # Valid outcomes (only 3)
+        valid_outcomes = ['affirmed', 'reversed', 'dismissed']
 
-            outcome = outcome_value.lower()
+        # Search for any of the three valid outcomes in the first line
+        for valid_outcome in valid_outcomes:
+            if valid_outcome in first_line_lower:
+                print(f"DEBUG [analyze_support_level]: Found '{valid_outcome}' in first line")
+                return valid_outcome
 
-        return outcome
+        # If none of the valid outcomes found, return unknown
+        print(f"DEBUG [analyze_support_level]: No valid outcome found, returning 'unknown'")
+        return 'unknown'
+
     except Exception as e:
         print(f"Error analyzing outcome: {e}")
+        print(f"DEBUG: Response first line: '{first_line[:100] if first_line else 'N/A'}'")
+        import traceback
+        traceback.print_exc()
         return 'unknown'
 
 
