@@ -23,9 +23,9 @@
     --strongly-oppose: #ef4444;
 
     /* Outcome disposition colors (3 states) */
-    --affirmed: #22c55e;     /* Green - Lower court upheld */
-    --reversed: #ef4444;     /* Red - Lower court overturned */
-    --dismissed: #94a3b8;    /* Gray - Case closed without decision */
+    --support: #22c55e;      /* Green - Support */
+    --overturn: #ef4444;     /* Red - Overturn */
+    --remand: #94a3b8;       /* Gray - Remand */
     --unknown: #d1d5db;      /* Light gray - Unknown/error state */
 }
 
@@ -128,6 +128,12 @@ main {
     font-weight: 600;
     margin-bottom: 0.75rem;
     color: var(--text);
+}
+
+.question-section label .emphasis {
+    color: #667eea;
+    font-weight: 500;
+    letter-spacing: 0.3px;
 }
 
 #question {
@@ -686,16 +692,16 @@ footer .disclaimer {
     cursor: default;
 }
 
-.bar-segment.affirmed {
-    background: var(--affirmed) !important;
+.bar-segment.support {
+    background: var(--support) !important;
 }
 
-.bar-segment.reversed {
-    background: var(--reversed) !important;
+.bar-segment.overturn {
+    background: var(--overturn) !important;
 }
 
-.bar-segment.dismissed {
-    background: var(--dismissed) !important;
+.bar-segment.remand {
+    background: var(--remand) !important;
 }
 
 .bar-segment.unknown {
@@ -762,16 +768,16 @@ footer .disclaimer {
     border: 1px solid rgba(0, 0, 0, 0.2);
 }
 
-.legend-color.affirmed {
-    background: var(--affirmed);
+.legend-color.support {
+    background: var(--support);
 }
 
-.legend-color.reversed {
-    background: var(--reversed);
+.legend-color.overturn {
+    background: var(--overturn);
 }
 
-.legend-color.dismissed {
-    background: var(--dismissed);
+.legend-color.remand {
+    background: var(--remand);
 }
 
 .legend-color.unknown {
@@ -779,24 +785,24 @@ footer .disclaimer {
 }
 
 /* Legend item and bar segment tooltip colors */
-.legend-item.affirmed,
-.bar-segment.affirmed {
-    --legend-bg: var(--affirmed);
-    --legend-border: var(--affirmed);
+.legend-item.support,
+.bar-segment.support {
+    --legend-bg: var(--support);
+    --legend-border: var(--support);
     --legend-text: black;
 }
 
-.legend-item.reversed,
-.bar-segment.reversed {
-    --legend-bg: var(--reversed);
-    --legend-border: var(--reversed);
+.legend-item.overturn,
+.bar-segment.overturn {
+    --legend-bg: var(--overturn);
+    --legend-border: var(--overturn);
     --legend-text: white;
 }
 
-.legend-item.dismissed,
-.bar-segment.dismissed {
-    --legend-bg: var(--dismissed);
-    --legend-border: var(--dismissed);
+.legend-item.remand,
+.bar-segment.remand {
+    --legend-bg: var(--remand);
+    --legend-border: var(--remand);
     --legend-text: white;
 }
 

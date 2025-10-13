@@ -333,16 +333,16 @@ async function handleAsyncProcessing(jobId, question) {
 
 // Helper function to determine text color based on outcome
 function getTextColorForOutcome(outcome) {
-    const darkTextOutcomes = ['affirmed'];
+    const darkTextOutcomes = ['support'];
     return darkTextOutcomes.includes(outcome) ? 'black' : 'white';
 }
 
 // Helper function to get outcome description
 function getOutcomeDescription(outcome) {
     const descriptions = {
-        'affirmed': 'Lower court upheld',
-        'reversed': 'Lower court overturned',
-        'dismissed': 'Case closed without decision'
+        'support': 'Support the action/ruling',
+        'overturn': 'Overturn the action/ruling',
+        'remand': 'Send back for further review'
     };
     return descriptions[outcome] || '';
 }
@@ -350,9 +350,9 @@ function getOutcomeDescription(outcome) {
 // Create summary legend showing all possible outcomes
 function createSummaryLegend(container) {
     const outcomes = [
-        { key: 'affirmed', label: 'Affirmed', description: 'Lower court upheld' },
-        { key: 'reversed', label: 'Reversed', description: 'Lower court overturned' },
-        { key: 'dismissed', label: 'Dismissed', description: 'Case closed without decision' }
+        { key: 'support', label: 'Support', description: 'Support the action/ruling' },
+        { key: 'overturn', label: 'Overturn', description: 'Overturn the action/ruling' },
+        { key: 'remand', label: 'Remand', description: 'Send back for further review' }
     ];
 
     const legendDiv = document.createElement('div');

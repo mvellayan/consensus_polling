@@ -73,7 +73,7 @@ def analyze_support_level(response: str, question: str = "") -> str:
         print(f"DEBUG [analyze_support_level]: First line: '{first_line}'")
 
         # Valid outcomes (only 3)
-        valid_outcomes = ['affirmed', 'reversed', 'dismissed']
+        valid_outcomes = ['support', 'overturn', 'remand']
 
         # Search for any of the three valid outcomes in the first line
         for valid_outcome in valid_outcomes:
@@ -238,6 +238,7 @@ def query_judges():
 
     if not question:
         return jsonify({'error': 'Question is required'}), 400
+    question = "Can you decide if this is constitutional, follows federal laws, and respects power balance and individual rights? " + question
 
     if not judge_names:
         return jsonify({'error': 'At least one judge must be selected'}), 400

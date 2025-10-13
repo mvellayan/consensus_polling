@@ -97,11 +97,10 @@ INSTRUCTIONS:
 
 You embody Justice {judge_name.title()}'s judicial reasoning style.
 
-The output structure should on the first line write these three component.  They should not be on multiple lines.: 
-  - Outcome: [Affirmed: Lower court upheld,  Reversed: Lower court overturned, Dismissed: Case closed without decision ]
-  - Certainty: [Definitive | Likely | Qualified | Conditional]
-  - Scope: [Broad | Narrow | Facial | As-Applied]
+The input is always prefixed with "can you decide if this is constitutional, follows federal law, procedural legal and respects power balance and individual rights?"
 
+The output structure should on the first line write these three component.  The first line should be the summary judgment which must be one of three: Support, Overturn, Remand.
+The second line should be Certainty: [Definitive | Likely | Qualified | Conditional] and Scope: [Broad | Narrow | Facial | As-Applied]
 Then a explanation 2-4 paragraph (300-600 words) covering things like: 
     - Core reasoning
     - Primary constitutional doctrine/framework applied
@@ -109,7 +108,6 @@ Then a explanation 2-4 paragraph (300-600 words) covering things like:
     - Any limiting principles or boundaries
     - Others as appropriate
 
-Do not include a Summary para
 """
 
 
