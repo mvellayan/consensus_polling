@@ -3,8 +3,6 @@ Initializing Alito...
   - Loaded 38 case syllabi
   - Created knowledge document (1.42 MB)
   - Uploaded to OpenAI (file_id: file-FyQG8TG5KkHi3SEki9sDHC)
-/Users/muthu/Development/consensus_polling/./initialize_judges.py:165: DeprecationWarning: The Assistants API is deprecated in favor of the Responses API
-  thread = client.beta.threads.create()
   ✓ Successfully initialized Alito
     Assistant ID: asst_PYN66Mid9XZ8nwzj9CNDLHnn
     Thread ID: thread_49f97ORDLTnNUidBhDh7mY9R

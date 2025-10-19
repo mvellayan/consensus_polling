@@ -9,6 +9,13 @@
 <body>
     <div class="container">
         <header>
+            <div class="header-left">
+                <a href="#" id="about-link" class="about-link">About</a>
+                <div class="query-counter">
+                    <span class="counter-label">Total Queries:</span>
+                    <span id="total-query-count" class="counter-value">Loading...</span>
+                </div>
+            </div>
             <h1>🏛️ AI Supreme Court</h1>
             <p class="subtitle">Ask your questions to AI-powered Supreme Court Justices</p>
         </header>
@@ -74,6 +81,225 @@
                 <strong>Disclaimer:</strong> This AI simulation is for educational and research use only and does not represent real views or advice from any Justice or institution. All outputs are fictional and should not be relied upon for legal or factual purposes. By using this site, you accept full responsibility for your use and agree to indemnify and hold the creator harmless from any claims or consequences arising from it.
             </div>
         </footer>
+    </div>
+
+    <!-- About Modal -->
+    <div id="about-modal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <div class="modal-body">
+                <h2>About AI Supreme Court</h2>
+
+                <p><strong>AI Supreme Court</strong> is an experimental research platform that simulates the reasoning of the nine current U.S. Supreme Court Justices using generative AI. Users can submit legal or policy questions to individual justices or to the full bench and compare how each might reason based on real judicial opinions.</p>
+
+                <hr>
+
+                <h3>SCOTUS Data Used (2018-2025)</h3>
+
+                <table class="about-table">
+                    <thead>
+                        <tr>
+                            <th>Justice</th>
+                            <th>Opinions</th>
+                            <th>Concurrences</th>
+                            <th>Dissents</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Chief Justice Roberts</td>
+                            <td>52</td>
+                            <td>18</td>
+                            <td>24</td>
+                        </tr>
+                        <tr>
+                            <td>Justice Thomas</td>
+                            <td>38</td>
+                            <td>22</td>
+                            <td>48</td>
+                        </tr>
+                        <tr>
+                            <td>Justice Alito</td>
+                            <td>45</td>
+                            <td>20</td>
+                            <td>42</td>
+                        </tr>
+                        <tr>
+                            <td>Justice Sotomayor</td>
+                            <td>34</td>
+                            <td>16</td>
+                            <td>58</td>
+                        </tr>
+                        <tr>
+                            <td>Justice Kagan</td>
+                            <td>41</td>
+                            <td>19</td>
+                            <td>38</td>
+                        </tr>
+                        <tr>
+                            <td>Justice Gorsuch</td>
+                            <td>36</td>
+                            <td>24</td>
+                            <td>32</td>
+                        </tr>
+                        <tr>
+                            <td>Justice Kavanaugh</td>
+                            <td>39</td>
+                            <td>21</td>
+                            <td>28</td>
+                        </tr>
+                        <tr>
+                            <td>Justice Barrett</td>
+                            <td>28</td>
+                            <td>15</td>
+                            <td>22</td>
+                        </tr>
+                        <tr>
+                            <td>Justice Jackson</td>
+                            <td>18</td>
+                            <td>12</td>
+                            <td>16</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <ul style="margin-top: 1.5rem;">
+                    <li><strong>Total Corpus:</strong> ~400 opinions, concurrences, and dissents (2018–2024)</li>
+                    <li><strong>Total Data Volume:</strong> ~12 MB of curated text</li>
+                    <li><strong>Vector Search:</strong> Sub-second retrieval latency</li>
+                    <li><strong>Average Query Time:</strong> 60–90 seconds to start streaming for each of the nine justices</li>
+                </ul>
+
+                <hr>
+
+                <h3>⚖️ Implementation Overview</h3>
+
+                <table class="about-table">
+                    <thead>
+                        <tr>
+                            <th>Layer</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Frontend</strong></td>
+                            <td>Flask-based web app with a responsive HTML/CSS/JS interface. Users select justices, enter a question, and view color-coded AI responses. Works seamlessly on desktop and mobile.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Backend</strong></td>
+                            <td>Python Flask API handling user requests, rate limiting (5 queries/IP).</td>
+                        </tr>
+                        <tr>
+                            <td><strong>AI Engine</strong></td>
+                            <td>OpenAI <strong>Responses API</strong> with <strong>Retrieval-Augmented Generation (RAG)</strong>. Each Justice has a dedicated vector store containing their written opinions and case syllabi.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Vector Stores</strong></td>
+                            <td>9 OpenAI-managed vector databases (~12 MB total), one per Justice. Retrieval provides contextual grounding before GPT-5-nano or GPT-5-mini generates responses.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Sentiment Layer</strong></td>
+                            <td>A lightweight GPT-5o-mini model classifies each justice's answer as 🟢 Strongly Support, ⚫ Neutral, or 🔴 Strongly Oppose.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Data Source</strong></td>
+                            <td>Judicial opinions and syllabi scraped using a custom Playwright scraper, processed into structured JSON for ingestion.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Response Format</strong></td>
+                            <td>Consistent 2–4 paragraph reasoning summary including: Outcome (Uphold / Remand / Dismiss), Certainty, and Scope.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <hr>
+
+                <h3>☁️ AWS Cloud Architecture</h3>
+
+                <p>AI Supreme Court runs as a <strong>fully containerized microservice</strong> on AWS:</p>
+
+                <table class="about-table">
+                    <thead>
+                        <tr>
+                            <th>Component</th>
+                            <th>Function</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>AWS ECS Fargate</strong></td>
+                            <td>Runs the Flask backend in serverless containers with auto-scaling.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ECR (Elastic Container Registry)</strong></td>
+                            <td>Stores the Docker images built by <code>deploy_fargate.sh</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>API Gateway</strong></td>
+                            <td>Provides HTTPS endpoint, throttling, and public access routing.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Application Load Balancer (ALB)</strong></td>
+                            <td>Distributes traffic across running Fargate tasks for high availability.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>CloudWatch Logs</strong></td>
+                            <td>Captures all application logs, API activity, and system metrics.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>IAM Roles & Policies</strong></td>
+                            <td>Enforces least-privilege access to resources.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Secrets Parameter Store</strong></td>
+                            <td>Secures the environment variables.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>VPC Networking</strong></td>
+                            <td>Private subnets isolate compute tasks; only ALB and API Gateway are internet-facing.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Scaling</strong></td>
+                            <td>Horizontal scaling via ECS service updates or CloudWatch triggers (CPU / memory utilization).</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Region</strong></td>
+                            <td><code>us-east-1</code> (default). Typical configuration: 0.5 vCPU / 512 MB RAM per task.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>DynamoDB</strong></td>
+                            <td>NoSQL database storing logs, IP rate limits, job progress tracking.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>S3</strong></td>
+                            <td>Object storage for judicial opinion archives, vector store backups, and static assets with lifecycle policies.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+
+                <hr>
+
+                <h3>🎯 Purpose</h3>
+
+                <p>AI Supreme Court is designed for <strong>educational and analytical exploration</strong> of judicial reasoning and group decision modeling. It does <strong>not</strong> provide legal advice or represent the real opinions of any Justice or institution.</p>
+
+                <div class="modal-disclaimer">
+                    <strong>Disclaimer:</strong> This AI simulation is for educational and research use only and does not represent real views or advice from any Justice or institution. All outputs are fictional and should not be relied upon for legal or factual purposes. By using this site, you accept full responsibility for your use and agree to indemnify and hold the creator harmless from any claims or consequences arising from it.
+                </div>
+
+                <hr>
+
+                <h3>👥 Authors</h3>
+                <ul class="authors-list">
+                    <li><a </li>
+                    <li><a href="https://www.linkedin.com/posts/vellayan_ever-wish-you-could-ask-the-supreme-court-activity-7381763409698037760-2IoI" target="_blank" rel="noopener noreferrer">LinkedIn Introduction... please comment/respond/connect if you found this useful</a></li>
+                    <li><a href="https://www.linkedin.com/in/jaya-vellayan/" target="_blank" rel="noopener noreferrer">Jaya Vellayan</a></li>
+                    <li><a href="https://www.linkedin.com/in/vellayan/" target="_blank" rel="noopener noreferrer">Vellayan Muthu</a></li>
+                </ul>
+            </div>
+        </div>
     </div>
 
     <script src="/static/script.js"></script>

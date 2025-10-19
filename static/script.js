@@ -9,7 +9,7 @@ let judgesGrid, questionInput, askButton, loading, responsesSection, responsesCo
 // Initialize the application
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('DOM loaded');
-    
+
     // Find all DOM elements after DOM is loaded
     judgesGrid = document.getElementById('judges-grid');
     questionInput = document.getElementById('question');
@@ -22,11 +22,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     await loadJudges();
     await checkQueryLimit();
-    
+    await loadTotalQueryCount();
+
     if (askButton) {
         askButton.addEventListener('click', handleAskQuestion);
     }
-    
+
     if (questionInput) {
         questionInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && !askButton.disabled) {
@@ -35,7 +36,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
         questionInput.addEventListener('input', updateAskButton);
     }
-    
+
     // Add Select All button functionality
     if (selectAllButton) {
         selectAllButton.addEventListener('click', () => {
@@ -45,6 +46,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else {
         console.error('Select All button not found');
     }
+
+    // About modal functionality
+    initializeAboutModal();
 });
 
 // Load judges from API
@@ -151,12 +155,32 @@ async function checkQueryLimit() {
         const response = await fetch(`${window.location.origin}/api/check-limit`);
         const data = await response.json();
         console.log('Query limit response:', data);
-        
+
         queriesRemaining = data.remaining;
         console.log('Updated queriesRemaining to:', queriesRemaining);
         updateQueryStatus();
     } catch (error) {
         console.error('Error checking query limit:', error);
+    }
+}
+
+// Load total query count
+async function loadTotalQueryCount() {
+    try {
+        const response = await fetch(`${window.location.origin}/api/total-queries`);
+        const data = await response.json();
+
+        const countElement = document.getElementById('total-query-count');
+        if (countElement) {
+            // Format number with commas
+            countElement.textContent = data.total.toLocaleString();
+        }
+    } catch (error) {
+        console.error('Error loading total query count:', error);
+        const countElement = document.getElementById('total-query-count');
+        if (countElement) {
+            countElement.textContent = '1200+';
+        }
     }
 }
 
@@ -231,6 +255,7 @@ async function handleAskQuestion() {
         }
 
         await checkQueryLimit();
+        await loadTotalQueryCount(); // Refresh total query count
 
     } catch (error) {
         console.error('Error querying judges:', error);
@@ -613,10 +638,50 @@ function showAlert(message, type = 'info') {
     const alert = document.createElement('div');
     alert.className = `alert alert-${type}`;
     alert.textContent = message;
-    
+
     document.body.appendChild(alert);
-    
+
     setTimeout(() => {
         alert.remove();
     }, 5000);
+}
+
+// Initialize About Modal
+function initializeAboutModal() {
+    const aboutLink = document.getElementById('about-link');
+    const aboutModal = document.getElementById('about-modal');
+    const modalClose = document.querySelector('.modal-close');
+
+    // Open modal when About link is clicked
+    if (aboutLink) {
+        aboutLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            aboutModal.style.display = 'block';
+            document.body.style.overflow = 'hidden'; // Prevent scrolling
+        });
+    }
+
+    // Close modal when X is clicked
+    if (modalClose) {
+        modalClose.addEventListener('click', () => {
+            aboutModal.style.display = 'none';
+            document.body.style.overflow = 'auto'; // Restore scrolling
+        });
+    }
+
+    // Close modal when clicking outside the modal content
+    window.addEventListener('click', (e) => {
+        if (e.target === aboutModal) {
+            aboutModal.style.display = 'none';
+            document.body.style.overflow = 'auto'; // Restore scrolling
+        }
+    });
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && aboutModal.style.display === 'block') {
+            aboutModal.style.display = 'none';
+            document.body.style.overflow = 'auto'; // Restore scrolling
+        }
+    });
 }

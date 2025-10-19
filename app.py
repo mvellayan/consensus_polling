@@ -220,12 +220,25 @@ def check_limit():
     ip_address = get_client_ip(request)
     print(f"DEBUG: check_limit using client IP: '{ip_address}'")
     count = get_ip_query_count(ip_address)
+    if ip_address in ['127.0.0.1', '::1']:
+        count = 0
     print(f"DEBUG: Found {count} queries for IP {ip_address}")
     return jsonify({
         'count': count,
         'remaining': max(0, 5 - count),
         'limit_reached': count >= 5,
         'debug_ip': ip_address
+    })
+
+
+@app.route('/api/total-queries')
+def get_total_queries():
+    """Get total query count (1200 + database count)."""
+    db_count = dynamodb_util.get_total_query_count()
+    total = 1200 + db_count
+    return jsonify({
+        'total': total,
+        'db_count': db_count
     })
 
 

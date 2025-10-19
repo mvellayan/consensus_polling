@@ -119,7 +119,21 @@ def get_ip_query_count(ip_address: str) -> int:
         )
 
         print(f"DEBUG: Found {response['Count']} records for IP {ip_address}")
+        if ip_address in ['127.0.0.1', 'localhost']:
+            response['Count'] = 0  # exception for localhost.
+
         return response['Count']
     except Exception as e:
         print(f"Error getting IP query count: {e}")
+        return 0
+
+
+def get_total_query_count() -> int:
+    """Get the total number of queries in DynamoDB."""
+    try:
+        table = dynamodb.Table(QUERIES_TABLE)
+        response = table.scan(Select='COUNT')
+        return response.get('Count', 0)
+    except Exception as e:
+        print(f"Error getting total query count: {e}")
         return 0

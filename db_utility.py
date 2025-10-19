@@ -14,12 +14,11 @@ dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 
 # Table names
 QUERIES_TABLE = 'scotus_queries'
-RESPONSES_TABLE = 'scotus_responses'
 JOB_PROGRESS_TABLE = 'scotus_job_progress'
 
 def delete_all_rows():
     """Delete all rows from all tables."""
-    tables = [QUERIES_TABLE, RESPONSES_TABLE, JOB_PROGRESS_TABLE]
+    tables = [QUERIES_TABLE, JOB_PROGRESS_TABLE]
     
     for table_name in tables:
         try:
@@ -61,37 +60,6 @@ def select_queries():
     except Exception as e:
         print(f"Error reading queries: {e}")
 
-def select_queries_and_responses():
-    """Select and display queries with their responses."""
-    try:
-        # Get queries
-        queries_table = dynamodb.Table(QUERIES_TABLE)
-        queries_response = queries_table.scan()
-        queries = {item['ipaddress_timestamp']: item for item in queries_response['Items']}
-
-        # Get responses
-        responses_table = dynamodb.Table(RESPONSES_TABLE)
-        responses_response = responses_table.scan()
-        responses = responses_response['Items']
-
-        print(f"\n=== QUERIES & RESPONSES ({len(responses)} responses) ===")
-        for response in responses:
-            query_key = response.get('ipaddress_timestamp', '')
-            query = queries.get(query_key, {})
-
-            timestamp = query.get('timestamp', 'N/A')
-            ip = query.get('ip_address', 'N/A')
-            question = query.get('question', 'N/A')
-            judge = response.get('judge_title', 'N/A')
-            brief = response.get('brief_response', 'N/A')
-
-            print(f"\n[{timestamp}] {ip}")
-            print(f"Q: {question}")
-            print(f"A ({judge}): {brief}")
-            print("-" * 50)
-
-    except Exception as e:
-        print(f"Error reading queries and responses: {e}")
 
 def get_public_ip():
     """Get the public IP address as seen by the server."""
@@ -103,11 +71,11 @@ def get_public_ip():
         return None
 
 def reset_my_ip(ip_address):
-    """Delete all queries and responses for a specific IP address."""
+    """Modify IP address by appending '*' to reset query limit."""
     try:
         from boto3.dynamodb.conditions import Attr
 
-        # Delete from queries table
+        # Find queries with this IP address
         queries_table = dynamodb.Table(QUERIES_TABLE)
         queries_response = queries_table.scan(
             FilterExpression=Attr('ip_address').eq(ip_address)
@@ -116,26 +84,27 @@ def reset_my_ip(ip_address):
 
         print(f"Found {len(queries_items)} queries for IP {ip_address}")
 
-        with queries_table.batch_writer() as batch:
-            for item in queries_items:
-                batch.delete_item(Key={'ipaddress_timestamp': item['ipaddress_timestamp']})
+        # Modify IP address for each query
+        modified_count = 0
+        for item in queries_items:
+            old_key = item['ipaddress_timestamp']
 
-        print(f"Deleted {len(queries_items)} queries from {QUERIES_TABLE}")
+            # Create new item with modified IP
+            new_item = item.copy()
+            new_item['ip_address'] = ip_address + '*'
 
-        # Delete from responses table
-        responses_table = dynamodb.Table(RESPONSES_TABLE)
-        responses_response = responses_table.scan(
-            FilterExpression=Attr('ip_address').eq(ip_address)
-        )
-        responses_items = responses_response['Items']
+            # Update the key if it contains the IP address
+            new_key = old_key.replace(ip_address, ip_address + '*')
+            new_item['ipaddress_timestamp'] = new_key
 
-        print(f"Found {len(responses_items)} responses for IP {ip_address}")
+            # Delete old item and create new one with modified IP
+            with queries_table.batch_writer() as batch:
+                batch.delete_item(Key={'ipaddress_timestamp': old_key})
+                batch.put_item(Item=new_item)
 
-        with responses_table.batch_writer() as batch:
-            for item in responses_items:
-                batch.delete_item(Key={'ipaddress_timestamp': item['ipaddress_timestamp']})
+            modified_count += 1
 
-        print(f"Deleted {len(responses_items)} responses from {RESPONSES_TABLE}")
+        print(f"Modified {modified_count} queries - IP changed to: {ip_address}*")
         print(f"\nSuccessfully reset query limit for IP: {ip_address}")
 
     except Exception as e:
@@ -147,14 +116,12 @@ def show_help():
 Database Utility Commands:
   delete-all          - Delete all rows from all tables
   queries             - Show all queries
-  full                - Show queries with responses
   reset-ip [IP]       - Reset query limit for IP (auto-detects your public IP if not provided)
   help                - Show this help message
 
 Examples:
   python db_utility.py delete-all
   python db_utility.py queries
-  python db_utility.py full
   python db_utility.py reset-ip                  # Auto-detect your public IP
   python db_utility.py reset-ip 192.168.1.1      # Reset specific IP
 """)
@@ -174,8 +141,6 @@ def main():
             print("Operation cancelled.")
     elif command == 'queries':
         select_queries()
-    elif command == 'full':
-        select_queries_and_responses()
     elif command == 'reset-ip':
         # Get IP address from argument or auto-detect
         if len(sys.argv) >= 3:
