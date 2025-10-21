@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Supreme Court</title>
+    <title>🏛️ AI Supreme Court</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
@@ -27,7 +27,7 @@
 
         <main>
             <section class="question-section">
-                <label for="question">🏛 AI Supreme Court, can you decide if this is <span class="emphasis">constitutional</span>, follows <span class="emphasis">federal law</span>, and <span class="emphasis">respects power balance</span> and <span class="emphasis">individual rights?</span></label>
+                <label for="question">AI Supreme Court, can you decide if this is <span class="emphasis">constitutional</span>, follows <span class="emphasis">federal law</span>, and <span class="emphasis">respects power balance</span> and <span class="emphasis">individual rights?</span></label>
                 <textarea
                     id="question"
                     placeholder="a lower court ruling, an executive order, a bill under consideration, an existing law or a policy"
@@ -47,7 +47,7 @@
 
             <div class="submit-section">
                 <button id="ask-button" class="ask-button">
-                    Ask the AI Supreme Court
+                    Ask the     AI Supreme Court
                 </button>
                 <div id="loading" class="loading" style="display: none;">
                     <div class="loading-header">
@@ -88,11 +88,29 @@
         <div class="modal-content">
             <span class="modal-close">&times;</span>
             <div class="modal-body">
-                <h2>About AI Supreme Court</h2>
-
-                <p><strong>AI Supreme Court</strong> is an experimental research platform that simulates the reasoning of the nine current U.S. Supreme Court Justices using generative AI. Users can submit legal or policy questions to individual justices or to the full bench and compare how each might reason based on real judicial opinions.</p>
+                <h2>About </h2>
+                <p>
+                  The <strong>AI Supreme Court</strong> is an experimental research platform that uses generative AI to simulate the reasoning of the nine current U.S. Supreme Court Justices.
+                  Users can explore how different justices might approach legal or policy questions, based on patterns found in real judicial opinions.
+                  The project’s goal is to <strong>promote understanding of judicial thinking</strong> and encourage thoughtful, informed discussion.
+                </p>
 
                 <hr>
+
+                <p>
+                  This platform is intended for <strong>educational and analytical exploration</strong> of judicial reasoning and group decision-making.
+                  It does <strong>not</strong> provide legal advice or reflect the real opinions of any Justice or institution.
+                </p>
+
+                <div class="modal-disclaimer">
+                  <strong>Disclaimer:</strong> This AI simulation is for educational and research use only.
+                  It does not represent actual views or advice from any Justice or institution.
+                  All outputs are fictional and should not be relied upon for legal or factual purposes.
+                  By using this site, you accept responsibility for your use and agree to indemnify and hold the creator harmless from any claims or consequences arising from it.
+                </div>
+
+                <hr>
+
 
                 <h3>SCOTUS Data Used (2018-2025)</h3>
 
@@ -164,15 +182,13 @@
                 </table>
 
                 <ul style="margin-top: 1.5rem;">
-                    <li><strong>Total Corpus:</strong> ~400 opinions, concurrences, and dissents (2018–2024)</li>
-                    <li><strong>Total Data Volume:</strong> ~12 MB of curated text</li>
-                    <li><strong>Vector Search:</strong> Sub-second retrieval latency</li>
-                    <li><strong>Average Query Time:</strong> 60–90 seconds to start streaming for each of the nine justices</li>
+                    <li><strong>Corpus:</strong> ~400 opinions, concurrences, and dissents (2018–2024)</li>
+                    <li><strong>    Data Volume:</strong> ~12 MB of curated text</li>
                 </ul>
 
                 <hr>
 
-                <h3>⚖️ Implementation Overview</h3>
+                <h3>Implementation Technology Overview</h3>
 
                 <table class="about-table">
                     <thead>
@@ -183,14 +199,6 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td><strong>Frontend</strong></td>
-                            <td>Flask-based web app with a responsive HTML/CSS/JS interface. Users select justices, enter a question, and view color-coded AI responses. Works seamlessly on desktop and mobile.</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Backend</strong></td>
-                            <td>Python Flask API handling user requests, rate limiting (5 queries/IP).</td>
-                        </tr>
-                        <tr>
                             <td><strong>AI Engine</strong></td>
                             <td>OpenAI <strong>Responses API</strong> with <strong>Retrieval-Augmented Generation (RAG)</strong>. Each Justice has a dedicated vector store containing their written opinions and case syllabi.</td>
                         </tr>
@@ -200,7 +208,7 @@
                         </tr>
                         <tr>
                             <td><strong>Sentiment Layer</strong></td>
-                            <td>A lightweight GPT-5o-mini model classifies each justice's answer as 🟢 Strongly Support, ⚫ Neutral, or 🔴 Strongly Oppose.</td>
+                            <td>A lightweight OpenAI GPT-5o-nano model classifies each justice's answer as 🟢 Strongly Support, ⚫ Neutral, or 🔴 Strongly Oppose.</td>
                         </tr>
                         <tr>
                             <td><strong>Data Source</strong></td>
@@ -210,14 +218,22 @@
                             <td><strong>Response Format</strong></td>
                             <td>Consistent 2–4 paragraph reasoning summary including: Outcome (Uphold / Remand / Dismiss), Certainty, and Scope.</td>
                         </tr>
+                        <tr>
+                            <td><strong>Frontend</strong></td>
+                            <td>Flask-based web app with a responsive HTML/CSS/JS interface. Users select justices, enter a question, and view color-coded AI responses. Works seamlessly on desktop and mobile.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Backend</strong></td>
+                            <td>Python Flask API handling user requests, rate limiting (5 queries/IP).</td>
+                        </tr>
                     </tbody>
                 </table>
 
                 <hr>
 
-                <h3>☁️ AWS Cloud Architecture</h3>
+                <h3>AWS Cloud Architecture</h3>
 
-                <p>AI Supreme Court runs as a <strong>fully containerized microservice</strong> on AWS:</p>
+                <p>🏛️AI Supreme Court runs as a <strong>fully containerized microservice</strong> on AWS:</p>
 
                 <table class="about-table">
                     <thead>
@@ -278,25 +294,13 @@
                     </tbody>
                 </table>
 
-
                 <hr>
 
-                <h3>🎯 Purpose</h3>
-
-                <p>AI Supreme Court is designed for <strong>educational and analytical exploration</strong> of judicial reasoning and group decision modeling. It does <strong>not</strong> provide legal advice or represent the real opinions of any Justice or institution.</p>
-
-                <div class="modal-disclaimer">
-                    <strong>Disclaimer:</strong> This AI simulation is for educational and research use only and does not represent real views or advice from any Justice or institution. All outputs are fictional and should not be relied upon for legal or factual purposes. By using this site, you accept full responsibility for your use and agree to indemnify and hold the creator harmless from any claims or consequences arising from it.
-                </div>
-
-                <hr>
-
-                <h3>👥 Authors</h3>
+                <h3>About Authors</h3>
                 <ul class="authors-list">
-                    <li><a </li>
-                    <li><a href="https://www.linkedin.com/posts/vellayan_ever-wish-you-could-ask-the-supreme-court-activity-7381763409698037760-2IoI" target="_blank" rel="noopener noreferrer">LinkedIn Introduction... please comment/respond/connect if you found this useful</a></li>
-                    <li><a href="https://www.linkedin.com/in/jaya-vellayan/" target="_blank" rel="noopener noreferrer">Jaya Vellayan</a></li>
-                    <li><a href="https://www.linkedin.com/in/vellayan/" target="_blank" rel="noopener noreferrer">Vellayan Muthu</a></li>
+                    <li><a href="https://www.linkedin.com/posts/vellayan_ever-wish-you-could-ask-the-supreme-court-activity-7381763409698037760-2IoI" target="_blank" rel="noopener noreferrer">LinkedIn Introduction <br/> Please comment / respond / connect / promote if you found this helpful</a></li>
+                    <li><a href="https://www.linkedin.com/in/jaya-vellayan/" target="_blank" rel="noopener noreferrer">Vellayan, Jaya </a></li>
+                    <li><a href="https://www.linkedin.com/in/vellayan/" target="_blank" rel="noopener noreferrer">Vellayan, Muthu</a></li>
                 </ul>
             </div>
         </div>
