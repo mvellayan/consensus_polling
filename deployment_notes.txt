@@ -1,0 +1,17 @@
+🌐 Your application is accessible at:
+   API Gateway: https://r128affp5l.execute-api.us-east-1.amazonaws.com
+   Load Balancer: http://ai-supreme-court-alb-1731068313.us-east-1.elb.amazonaws.com
+
+📊 Monitor your deployment:
+   ECS Console: https://console.aws.amazon.com/ecs/home?region=us-east-1#/clusters/ai-supreme-court-cluster
+   CloudWatch Logs: https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#logsV2:log-groups/log-group/%2Fecs%2Fai-supreme-court
+
+🔧 Useful commands:
+   Check service status: aws ecs describe-services --cluster ai-supreme-court-cluster --services ai-supreme-court-service --region us-east-1
+   View logs: aws logs tail /ecs/ai-supreme-court --follow --region us-east-1
+
+   aws ecs delete-service --cluster ai-supreme-court-cluster --service ai-supreme-court-service-v2
+
+
+   aws ecs update-service --cluster ai-supreme-court-cluster --service ai-supreme-court-service --desired-count 1
+
