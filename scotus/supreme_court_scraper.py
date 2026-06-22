@@ -120,7 +120,7 @@ async def scrape_supreme_court_case(url):
             print("Extracting syllabus...")
             syllabus = await extract_syllabus(page)
             if syllabus:
-                syllabus_file = f"scotus/{case_number}_syllabus.json"
+                syllabus_file = f"scotus/data/{case_number}_syllabus.json"
                 with open(syllabus_file, 'w', encoding='utf-8') as f:
                     json.dump({'syllabus': syllabus}, f, indent=2, ensure_ascii=False)
                 print(f"✓ Saved syllabus to {syllabus_file}")
@@ -161,7 +161,7 @@ async def scrape_supreme_court_case(url):
                     opinion_text = await extract_opinion_text(page, opinion_id)
 
                     if opinion_text:
-                        opinion_file = f"scotus/{case_number}_{judge}_{opinion_type}.json"
+                        opinion_file = f"scotus/data/{case_number}_{judge}_{opinion_type}.json"
                         with open(opinion_file, 'w', encoding='utf-8') as f:
                             json.dump({
                                 'case_number': case_number,

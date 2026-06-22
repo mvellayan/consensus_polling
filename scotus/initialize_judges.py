@@ -40,7 +40,7 @@ JUDGES = [
 
 def load_judge_documents(judge_name: str) -> Dict[str, List[Dict]]:
     """Load all case documents for a specific judge."""
-    scotus_dir = "scotus"
+    scotus_dir = "scotus/data"
 
     # Find all opinion files for this judge
     opinion_files = glob.glob(f"{scotus_dir}/*_{judge_name}_*.json")
@@ -203,7 +203,7 @@ def main():
             print()
 
     # Save judge information
-    output_file = "judge_assistants.json"
+    output_file = "scotus/judge_assistants.json"
     with open(output_file, 'w') as f:
         json.dump(judge_data, f, indent=2)
 

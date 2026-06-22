@@ -8,7 +8,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Copy judge assistants configuration
-COPY judge_assistants.json ./
+COPY scotus/judge_assistants.json ./scotus/
 
 EXPOSE 5000
 

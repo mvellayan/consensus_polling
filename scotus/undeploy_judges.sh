@@ -1,8 +1,12 @@
+#!/usr/bin/env bash
+# Run from repo root (reads repo-root .env, calls scotus/ scripts).
+cd "$(dirname "$0")/.."
+
 export `cat .env`
 
 echo "DEBUG: API Key loaded: ${OPENAI_API_KEY:0:20}..." # Show first 20 chars only
 
-python delete_judges.py
+python scotus/delete_judges.py
 
 echo "Deleting all vector stores..."
 # Get all vector stores and delete them

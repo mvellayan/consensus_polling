@@ -11,7 +11,7 @@ from initialize_judges import create_judge_instructions
 
 def update_instructions():
     """Update instructions for all judges in judge_assistants.json."""
-    input_file = "judge_assistants.json"
+    input_file = "scotus/judge_assistants.json"
 
     # Load existing judge data
     print("Loading existing judge data...")

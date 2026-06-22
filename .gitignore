@@ -18,3 +18,4 @@ scotus/hold/
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml
 !.elasticbeanstalk/*.global.yml
+.gstack/

@@ -15,7 +15,7 @@ def delete_judges():
 
     # Load judge data
     try:
-        with open("judge_assistants.json", 'r') as f:
+        with open("scotus/judge_assistants.json", 'r') as f:
             judges = json.load(f)
     except FileNotFoundError:
         print("No judge_assistants.json found. Nothing to delete.")
@@ -47,8 +47,8 @@ def delete_judges():
 
     # Delete the JSON file
     import os
-    if os.path.exists('judge_assistants.json'):
-        os.remove('judge_assistants.json')
+    if os.path.exists('scotus/judge_assistants.json'):
+        os.remove('scotus/judge_assistants.json')
         print("✓ Deleted judge_assistants.json")
 
     print("\n✅ All judges and resources have been deleted!")

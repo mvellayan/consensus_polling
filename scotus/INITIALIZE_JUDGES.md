@@ -30,7 +30,7 @@ scotus/ directory structure:
 ```
 
 **Loading Process:**
-- Scans `scotus/` directory for judge-specific opinion files
+- Scans `scotus/data/` directory for judge-specific opinion files
 - Pattern: `*_{judge_name}_*.json` (e.g., `12345_roberts_majority.json`)
 - Loads corresponding case syllabi using case numbers
 - Combines opinions with case context

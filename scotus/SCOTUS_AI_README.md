@@ -46,7 +46,7 @@ Make sure you have JSON files in the `scotus/` directory with the naming format:
 First, initialize the 9 judge conversation threads:
 
 ```bash
-python initialize_judges.py
+python scotus/initialize_judges.py
 ```
 
 This will:
@@ -235,7 +235,7 @@ Check your OpenAI account has sufficient credits.
 
 ```bash
 # 1. Initialize all judges
-$ python initialize_judges.py
+$ python scotus/initialize_judges.py
 # ... creates judge_threads.json
 
 # 2. Query three judges on constitutional interpretation

@@ -61,7 +61,7 @@ except Exception as e:
 def load_judge_assistants() -> Dict[str, Dict]:
     """Load judge assistant information from the saved JSON file."""
     try:
-        with open("judge_assistants.json", 'r') as f:
+        with open("scotus/judge_assistants.json", 'r') as f:
             assistants = json.load(f)
             return {a['judge_name']: a for a in assistants}
     except FileNotFoundError:
