@@ -95,35 +95,34 @@ def parse_certainty_scope(response: str) -> Dict[str, Optional[str]]:
     Defensive like analyze_support_level: missing -> None, never raises.
     """
     result: Dict[str, Optional[str]] = {"certainty": None, "scope": None}
+    _CERTAINTY = ('Definitive', 'Likely', 'Qualified', 'Conditional')
+    _SCOPE = {'broad': 'Broad', 'narrow': 'Narrow',
+              'facial': 'Facial', 'as-applied': 'As-Applied'}
     try:
         lines = response.strip().split('\n') if response else []
         if len(lines) < 2:
             return result
         second_line = lines[1]
 
-        certainty_match = re.search(
-            r'Certainty:\s*\[?\s*(Definitive|Likely|Qualified|Conditional)',
-            second_line,
-            re.IGNORECASE,
+        # Models drift on the labels (e.g. "Certainty: Definitive | Facial" drops
+        # the "Scope:" label). Prefer the labeled form, then fall back to a bare
+        # enum value on line 2 — the certainty/scope value sets are disjoint, so
+        # matching the value itself is unambiguous.
+        cert_alts = '|'.join(_CERTAINTY)
+        certainty_match = (
+            re.search(rf'Certainty:\s*\[?\s*({cert_alts})', second_line, re.IGNORECASE)
+            or re.search(rf'\b({cert_alts})\b', second_line, re.IGNORECASE)
         )
         if certainty_match:
             result["certainty"] = certainty_match.group(1).capitalize()
 
-        scope_match = re.search(
-            r'Scope:\s*\[?\s*(Broad|Narrow|Facial|As-Applied)',
-            second_line,
-            re.IGNORECASE,
+        scope_alts = 'Broad|Narrow|Facial|As-Applied'
+        scope_match = (
+            re.search(rf'Scope:\s*\[?\s*({scope_alts})', second_line, re.IGNORECASE)
+            or re.search(rf'\b({scope_alts})\b', second_line, re.IGNORECASE)
         )
         if scope_match:
-            # Preserve the canonical As-Applied casing.
-            raw = scope_match.group(1)
-            canonical = {
-                'broad': 'Broad',
-                'narrow': 'Narrow',
-                'facial': 'Facial',
-                'as-applied': 'As-Applied',
-            }
-            result["scope"] = canonical.get(raw.lower(), raw)
+            result["scope"] = _SCOPE.get(scope_match.group(1).lower(), scope_match.group(1))
 
         return result
     except Exception as e:

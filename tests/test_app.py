@@ -56,6 +56,21 @@ def test_parse_certainty_scope_partial_only_scope():
     assert out == {"certainty": None, "scope": "Broad"}
 
 
+def test_parse_certainty_scope_unlabeled_scope_drift():
+    # Observed live: the model drops the "Scope:" label — "Certainty: Definitive | Facial".
+    # The bare enum value must still be picked up.
+    resp = "Overturn\nCertainty: Definitive | Facial\nbody"
+    out = appmod.parse_certainty_scope(resp)
+    assert out == {"certainty": "Definitive", "scope": "Facial"}
+
+
+def test_parse_certainty_scope_fully_unlabeled():
+    # Both labels dropped, bare values only.
+    resp = "Support\nLikely, Narrow\nbody"
+    out = appmod.parse_certainty_scope(resp)
+    assert out == {"certainty": "Likely", "scope": "Narrow"}
+
+
 def test_parse_certainty_scope_never_raises_on_garbage():
     # None-ish / weird input must not raise.
     assert appmod.parse_certainty_scope("\n\n\n") == {"certainty": None, "scope": None}
