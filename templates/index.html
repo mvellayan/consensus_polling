@@ -60,18 +60,14 @@
             <section id="responses-section" class="responses-section" style="display: none;">
                 <div class="responses-header">
                     <h2>Judicial Responses</h2>
-                    <span id="wait-message" class="wait-message" style="display: none;">Response takes 10-30 seconds/judge...please wait</span>
                 </div>
-                <div id="progress-indicator" class="progress-indicator" style="display: none;">
-                    <div class="progress-text">
-                        <span id="progress-count">0 of 9 judges response completed</span>
-                    </div>
-                    <div class="progress-bar-container">
-                        <div id="progress-bar" class="progress-bar" style="width: 0%;"></div>
-                    </div>
+                <!-- Syllabus headline: types in once all justices have ruled -->
+                <div id="syllabus-headline" class="syllabus-headline" style="display: none;">
+                    <span class="syllabus-label">Syllabus</span>
+                    <p id="syllabus-text" class="syllabus-text"></p>
                 </div>
                 <div id="responses-container" class="responses-container">
-                    <!-- Responses will appear here -->
+                    <!-- Vote bar + per-judge cards stream in here -->
                 </div>
             </section>
         </main>

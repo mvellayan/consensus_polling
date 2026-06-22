@@ -865,10 +865,139 @@ footer .disclaimer {
     --legend-text: black;
 }
 
+/* Syllabus headline (streamed consensus, types in at the end) */
+.syllabus-headline {
+    margin: 0 0 1.5rem 0;
+    padding: 1.5rem 1.75rem;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    color: var(--white);
+    border-radius: 14px;
+    box-shadow: 0 6px 24px rgba(26, 54, 93, 0.25);
+    border-left: 6px solid var(--accent);
+    transition: box-shadow 0.4s ease;
+}
+
+.syllabus-headline.final {
+    box-shadow: 0 8px 32px rgba(26, 54, 93, 0.4);
+    border-left-color: #ffd700;
+}
+
+.syllabus-headline .syllabus-label {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    opacity: 0.75;
+    margin-bottom: 0.5rem;
+}
+
+.syllabus-headline .syllabus-text {
+    font-size: 1.25rem;
+    line-height: 1.6;
+    font-weight: 500;
+    margin: 0;
+    white-space: pre-wrap;
+}
+
+/* Per-judge streaming cards */
+.judge-cards {
+    display: grid;
+    gap: 1rem;
+}
+
+.response-card .response-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.judge-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+}
+
+.response-card .judge-name {
+    font-size: 1.1rem;
+    margin: 0;
+    flex: 1;
+}
+
+.card-labels {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.card-chip {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.08);
+    color: var(--text-light);
+    border: 1px solid var(--border);
+    white-space: nowrap;
+}
+
+.card-chip.scope {
+    background: rgba(49, 130, 206, 0.12);
+    color: var(--accent);
+    border-color: rgba(49, 130, 206, 0.3);
+}
+
+/* Live streaming text (the "typing" judge) */
+.streaming-text {
+    padding: 1rem 1.5rem;
+    white-space: pre-wrap;
+    line-height: 1.6;
+    color: var(--text);
+    min-height: 1.5rem;
+}
+
+.response-card.streaming .response-header {
+    background: rgba(178, 152, 120, 0.35);
+}
+
+.response-card.streaming .streaming-text::after {
+    content: '▋';
+    margin-left: 2px;
+    animation: blink 1s steps(1) infinite;
+    color: var(--accent);
+}
+
+@keyframes blink {
+    50% { opacity: 0; }
+}
+
+/* Outcome-colored left border once a judge is done */
+.response-card.done.support { border-left: 5px solid var(--support); }
+.response-card.done.overturn { border-left: 5px solid var(--overturn); }
+.response-card.done.remand { border-left: 5px solid var(--remand); }
+.response-card.done.unknown,
+.response-card.error { border-left: 5px solid var(--unknown); }
+
+.response-error {
+    padding: 1rem 1.5rem;
+    color: #991b1b;
+}
+
+.response-card.error .response-header {
+    background: rgba(239, 68, 68, 0.12);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     header h1 {
         font-size: 2rem;
+    }
+
+    .syllabus-headline .syllabus-text {
+        font-size: 1.1rem;
     }
 
     .judges-grid {
