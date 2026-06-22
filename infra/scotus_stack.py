@@ -142,8 +142,12 @@ class ScotusStack(Stack):
             handler="run.sh",
             code=_lambda.Code.from_asset(
                 REPO_ROOT,
+                # Drop the 1,058 case-data JSONs under scotus/ (init-time only),
+                # but KEEP scotus/judge_assistants.json — the app loads it at
+                # startup. Negation + GLOB mode (last match wins) re-includes it.
                 exclude=[
-                    "scotus",
+                    "scotus/**",
+                    "!scotus/judge_assistants.json",
                     ".venv",
                     "infra",
                     "tests",
@@ -155,6 +159,7 @@ class ScotusStack(Stack):
                     ".idea",
                     ".claude",
                 ],
+                ignore_mode=cdk.IgnoreMode.GLOB,
             ),
             layers=[lwa_layer],
             timeout=Duration.seconds(300),
