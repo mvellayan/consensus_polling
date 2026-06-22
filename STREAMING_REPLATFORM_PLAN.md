@@ -7,7 +7,7 @@ syllabus in `RESPONSE_SYNTHESIS_PLAN.md`.** Both collapse into the stream.
 ## The pivot
 
 Move to **strictly Lambda + full token streaming for all 9 justices**, custom
-domain `scotus.me`. The eureka: the background-thread async-job model is the only
+domain `scotus.run`. The eureka: the background-thread async-job model is the only
 reason Lambda was wrong before. Streaming deletes that model — one invocation
 holds the connection open and streams until done — so Lambda becomes the *simpler*
 fit, not the harder one. The fragile machinery (daemon thread, `ThreadPoolExecutor`,
@@ -20,7 +20,7 @@ all gets removed, not migrated.
 |---|----------|--------|
 | Compute | Platform | **Lambda response streaming** (replaces Fargate) |
 | Front door | Transport | **CloudFront → Function URL (OAC)** — ALB can't stream Lambda |
-| Domain | Hostname | **`scotus.me`**, ACM cert in **us-east-1** (CloudFront requirement) |
+| Domain | Hostname | **`scotus.run`**, ACM cert in **us-east-1** (CloudFront requirement) |
 | Framework | App | **Quart** (async Flask) + **AsyncOpenAI** |
 | Concurrency | 9 streams | `asyncio` tasks → `asyncio.Queue` → multiplexed output stream |
 | Packaging | Lambda | **zip + Lambda Web Adapter layer** (faster cold start than container) |
@@ -36,7 +36,7 @@ all gets removed, not migrated.
 Browser  (fetch + ReadableStream reader → 9 judge panels + syllabus)
    │  one request, held open
    ▼
-Route53 (scotus.me) → CloudFront (ACM us-east-1, OAC) → Lambda Function URL
+Route53 (scotus.run) → CloudFront (ACM us-east-1, OAC) → Lambda Function URL
                                                          (InvokeMode: RESPONSE_STREAM)
    │  Lambda Web Adapter → Quart app
    ▼
@@ -95,11 +95,11 @@ NEW CODEPATHS                                        TEST
 
 ```
 1. Build infra/ CDK: Lambda (zip + Web Adapter) + Function URL + CloudFront +
-   ACM(us-east-1, scotus.me) + Route53 + fresh DynamoDB tables (+ GSI on ip_address).
+   ACM(us-east-1, scotus.run) + Route53 + fresh DynamoDB tables (+ GSI on ip_address).
 2. Rewrite app → Quart streaming generator; rewrite frontend → stream reader.
 3. Deploy NEW stack; smoke via the Function URL directly (bypass CloudFront).
-4. Create Route53 hosted zone for scotus.me; point registrar nameservers at it.
-5. ACM DNS-validates; CloudFront alias scotus.me; verify HTTPS + streaming end-to-end.
+4. Create Route53 hosted zone for scotus.run; point registrar nameservers at it.
+5. ACM DNS-validates; CloudFront alias scotus.run; verify HTTPS + streaming end-to-end.
 6. Tear down the OLD Fargate stack (ECS/ALB/API GW/old tables/IAM). Don't recreate
    the dead DocumentDB policy.
 ── Rollback before step 6 = leave the old Fargate stack serving; don't flip DNS.
@@ -107,8 +107,8 @@ NEW CODEPATHS                                        TEST
 
 ## Setup prerequisites (one-time, operator)
 
-- `scotus.me` registrar nameservers → Route53 hosted zone (so CDK can DNS-validate ACM + alias CloudFront).
-- ACM cert for `scotus.me` MUST be in **us-east-1** (CloudFront).
+- `scotus.run` registrar nameservers → Route53 hosted zone (so CDK can DNS-validate ACM + alias CloudFront).
+- ACM cert for `scotus.run` MUST be in **us-east-1** (CloudFront).
 - `judge_assistants.json` regenerated (`initialize_judges.py`) before packaging — it's a runtime input.
 
 ## Implementation Tasks
@@ -119,7 +119,7 @@ NEW CODEPATHS                                        TEST
 - [ ] **T2 (P1, human: ~2 days / CC: ~3h)** — frontend — replace poll loop with `fetch` + `ReadableStream` reader routing `{judge, token}` to panels + syllabus; remove `handleAsyncProcessing`/progress polling
   - Files: `static/script.js`, `static/style.css`, `templates/index.html`
   - Verify: manual — tokens fill 9 panels live; syllabus types at the end; per-judge error shows inline
-- [ ] **T3 (P1, human: ~1.5 days / CC: ~3h)** — infra — CDK Python: Lambda(zip + Web Adapter) + Function URL(RESPONSE_STREAM) + CloudFront(OAC) + ACM(us-east-1) + Route53(scotus.me) + DynamoDB tables + **GSI on ip_address**
+- [ ] **T3 (P1, human: ~1.5 days / CC: ~3h)** — infra — CDK Python: Lambda(zip + Web Adapter) + Function URL(RESPONSE_STREAM) + CloudFront(OAC) + ACM(us-east-1) + Route53(scotus.run) + DynamoDB tables + **GSI on ip_address**
   - Files: `infra/`
   - Verify: `cdk synth`; smoke the Function URL streams
 - [ ] **T4 (P1, human: ~half day / CC: ~1h)** — app — grounded synthesis prompt + `parse_certainty_scope`; tally + headline generated in code, LLM writes prose only

@@ -1,14 +1,14 @@
-"""ScotusStack — Lambda response-streaming web app on scotus.me.
+"""ScotusStack — Lambda response-streaming web app on scotus.run.
 
 Resource graph:
 
-  Route53 PublicHostedZone (scotus.me)
+  Route53 PublicHostedZone (scotus.run)
         │  (operator points registrar NS here)
         ▼
-  ACM Certificate (scotus.me, DNS-validated, us-east-1)
+  ACM Certificate (scotus.run, DNS-validated, us-east-1)
         │
         ▼
-  CloudFront Distribution (alias scotus.me, OAC) ──► Lambda Function URL
+  CloudFront Distribution (alias scotus.run, OAC) ──► Lambda Function URL
                                                      (RESPONSE_STREAM, IAM auth)
                                                             │
                                                             ▼
@@ -43,7 +43,7 @@ from constructs import Construct
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
 # Domain served by CloudFront.
-DOMAIN_NAME = "scotus.me"
+DOMAIN_NAME = "scotus.run"
 
 # Logical name prefix for the DynamoDB tables; overridable via the app env var
 # TABLE_PREFIX at runtime, but the physical table names are fixed at deploy time
@@ -215,7 +215,7 @@ class ScotusStack(Stack):
         )
 
         # ------------------------------------------------------------------
-        # ACM certificate for scotus.me, DNS-validated against the zone.
+        # ACM certificate for scotus.run, DNS-validated against the zone.
         # Stack is in us-east-1, so this cert is valid for CloudFront.
         # ------------------------------------------------------------------
         certificate = acm.Certificate(
@@ -273,7 +273,7 @@ class ScotusStack(Stack):
         )
 
         # ------------------------------------------------------------------
-        # Route53 alias records scotus.me -> CloudFront (A + AAAA).
+        # Route53 alias records scotus.run -> CloudFront (A + AAAA).
         # ------------------------------------------------------------------
         route53.ARecord(
             self,
@@ -329,5 +329,5 @@ class ScotusStack(Stack):
             self,
             "HostedZoneNameServers",
             value=cdk.Fn.join(", ", hosted_zone.hosted_zone_name_servers or []),
-            description="Point the scotus.me registrar nameservers at these",
+            description="Point the scotus.run registrar nameservers at these",
         )

@@ -59,7 +59,7 @@ echo "  ResponsesTable:   $(stack_output ResponsesTableName)"
 
 echo
 warn "NAMESERVER REMINDER"
-warn "Point the ${APP_DOMAIN:-scotus.me} registrar's NS records at this hosted zone:"
+warn "Point the ${APP_DOMAIN:-scotus.run} registrar's NS records at this hosted zone:"
 echo "  $(stack_output HostedZoneNameServers)"
 warn "ACM DNS validation and the CloudFront alias only succeed once the registrar"
 warn "delegates to this Route53 zone."

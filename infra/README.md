@@ -2,14 +2,14 @@
 
 Single stack `ScotusStack` deploying the SCOTUS Quart streaming app on
 **Lambda response streaming** behind **CloudFront → Lambda Function URL (OAC)**
-on the custom domain **scotus.me**.
+on the custom domain **scotus.run**.
 
 ## Resource graph
 
 ```
-Route53 PublicHostedZone (scotus.me)
+Route53 PublicHostedZone (scotus.run)
    └─ ACM cert (DNS-validated, us-east-1)
-       └─ CloudFront (alias scotus.me, OAC, caching disabled, ALL_VIEWER_EXCEPT_HOST_HEADER)
+       └─ CloudFront (alias scotus.run, OAC, caching disabled, ALL_VIEWER_EXCEPT_HOST_HEADER)
            └─ Lambda Function URL (RESPONSE_STREAM, IAM auth)
                └─ Lambda scotus-app (python3.12 + Lambda Web Adapter layer, zip)
                    ├─ SSM SecureString /scotus/openai-api-key (read)
@@ -28,8 +28,8 @@ Route53 PublicHostedZone (scotus.me)
      --region us-east-1
    ```
 
-2. **scotus.me nameservers → Route53** — the stack creates a `PublicHostedZone`
-   for `scotus.me`. After the first deploy (or `cdk synth` + a manual zone),
+2. **scotus.run nameservers → Route53** — the stack creates a `PublicHostedZone`
+   for `scotus.run`. After the first deploy (or `cdk synth` + a manual zone),
    read the zone's four nameservers (output `HostedZoneNameServers` or the
    Route53 console) and set them as the **NS records at your domain registrar**.
    ACM DNS validation and the CloudFront alias only succeed once the registrar
@@ -73,4 +73,4 @@ Everything is pinned to **us-east-1** because CloudFront's viewer certificate
 ## Smoke test the stream
 
 After deploy, hit the raw `FunctionUrl` output (bypassing CloudFront) with SigV4
-auth, then verify `https://scotus.me` once DNS/ACM propagate.
+auth, then verify `https://scotus.run` once DNS/ACM propagate.

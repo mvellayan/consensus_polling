@@ -16,7 +16,7 @@ ScotusStack(
     "ScotusStack",
     # CloudFront + ACM viewer cert require us-east-1.
     env=cdk.Environment(region="us-east-1"),
-    description="Lambda response-streaming SCOTUS app behind CloudFront on scotus.me",
+    description="Lambda response-streaming SCOTUS app behind CloudFront on scotus.run",
 )
 
 app.synth()

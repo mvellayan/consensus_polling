@@ -1,8 +1,8 @@
-# Deploying SCOTUS (scotus.me)
+# Deploying SCOTUS (scotus.run)
 
 The AI Supreme Court runs as a single CDK stack, **`ScotusStack`**, deploying a
 Quart streaming app on **Lambda response streaming** behind
-**CloudFront → Lambda Function URL (OAC)** on the custom domain **scotus.me**.
+**CloudFront → Lambda Function URL (OAC)** on the custom domain **scotus.run**.
 
 This supersedes the stale `DEPLOYMENT_README.md` (Fargate-era) intent.
 
@@ -20,8 +20,8 @@ No daemon threads, no job-progress polling — the stream replaces all of it.
 
 ## Prerequisites (one-time, operator)
 
-1. **`scotus.me` nameservers → Route53.** The stack creates a `PublicHostedZone`
-   for `scotus.me`. After the first deploy, read the `HostedZoneNameServers`
+1. **`scotus.run` nameservers → Route53.** The stack creates a `PublicHostedZone`
+   for `scotus.run`. After the first deploy, read the `HostedZoneNameServers`
    output and set those four NS records **at your domain registrar**. ACM DNS
    validation and the CloudFront alias only succeed once the registrar delegates
    to this zone.
@@ -70,12 +70,12 @@ admin/init_judges.sh
 # 2. First deploy (seeds SSM, bootstraps, deploys)
 aws/create.sh
 
-# 3. Point the scotus.me registrar NS records at the printed HostedZoneNameServers.
+# 3. Point the scotus.run registrar NS records at the printed HostedZoneNameServers.
 #    Wait for ACM DNS validation + CloudFront to settle.
 
 # 4. Verify
 aws/status.sh
-#    Smoke the raw FunctionUrl (SigV4) first, then https://scotus.me once DNS/ACM propagate.
+#    Smoke the raw FunctionUrl (SigV4) first, then https://scotus.run once DNS/ACM propagate.
 
 # Later: ship code changes
 aws/redeploy.sh
