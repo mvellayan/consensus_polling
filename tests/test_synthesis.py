@@ -91,11 +91,15 @@ async def test_grounding_passes_fixed_tally(monkeypatch):
     assert tally in instr                       # the exact code-computed facts
     assert "DO NOT CHANGE" in instr             # the grounding guardrail
     assert "SUPPORT (2)" in tally and "OVERTURN (1)" in tally
-    # tokens were emitted to the queue
+    # tokens were emitted, and the drain sentinel is ALWAYS last (regression:
+    # the old timeout-poll drain stranded syllabus tokens and never terminated
+    # deterministically).
     kinds = []
     while not q.empty():
         kinds.append(q.get_nowait()[0])
-    assert kinds and all(k == "syllabus_token" for k in kinds)
+    assert kinds[-1] == "__syllabus_done__"
+    assert "syllabus_token" in kinds
+    assert all(k == "syllabus_token" for k in kinds[:-1])
 
 
 async def test_single_judge_uses_tldr(monkeypatch):
@@ -129,6 +133,8 @@ async def test_syllabus_error_is_additive(monkeypatch):
     assert result is None
     kind, payload = q.get_nowait()
     assert kind == "syllabus_error" and "api down" in payload["error"]
+    # even on error, the drain sentinel is emitted so the generator terminates
+    assert q.get_nowait()[0] == "__syllabus_done__"
 
 
 @pytest.mark.skipif(

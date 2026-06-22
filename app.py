@@ -396,6 +396,10 @@ async def _stream_syllabus(completed: List[Dict], tally_string: str,
             "error": error_msg,
         }))
         return None
+    finally:
+        # Always signal completion so the drain loop terminates deterministically
+        # (mirrors the per-judge __done__ sentinel — no timeout polling).
+        await out_queue.put(("__syllabus_done__", {"type": "__syllabus_done__"}))
 
 
 @app.route('/api/query', methods=['POST'])
@@ -467,14 +471,12 @@ async def query_judges():
             syllabus_task = asyncio.create_task(
                 _stream_syllabus(completed, tally_string, out_queue)
             )
-            # Drain syllabus tokens as they arrive.
-            while not syllabus_task.done() or not out_queue.empty():
-                try:
-                    kind, payload = await asyncio.wait_for(out_queue.get(), timeout=0.1)
-                    yield (json.dumps(payload) + "\n").encode("utf-8")
-                except asyncio.TimeoutError:
-                    if syllabus_task.done() and out_queue.empty():
-                        break
+            # Drain syllabus tokens until the sentinel — deterministic, no polling.
+            while True:
+                kind, payload = await out_queue.get()
+                if kind == "__syllabus_done__":
+                    break
+                yield (json.dumps(payload) + "\n").encode("utf-8")
             await syllabus_task
         finally:
             # Durable write even on client disconnect.
