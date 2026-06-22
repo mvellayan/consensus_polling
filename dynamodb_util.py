@@ -1,71 +1,21 @@
 """
 DynamoDB utility functions for production deployment.
+
+Sync boto3 only — callers in the async app MUST wrap these in
+asyncio.to_thread(...) so the event loop never blocks.
 """
 
+import os
 import boto3
-from boto3.dynamodb.conditions import Key, Attr
+from boto3.dynamodb.conditions import Attr
 from datetime import datetime
-from typing import Dict, Any, Optional
 
 # Initialize DynamoDB resource
 dynamodb = boto3.resource('dynamodb')
 
-# Table names
-JOB_PROGRESS_TABLE = 'scotus_job_progress'
-QUERIES_TABLE = 'scotus_queries'
-RESPONSES_TABLE = 'scotus_responses'
-
-
-def save_job_progress(job_id: str, progress_data: Dict[str, Any]) -> None:
-    """Save job progress to DynamoDB."""
-    try:
-        table = dynamodb.Table(JOB_PROGRESS_TABLE)
-        table.put_item(Item={
-            'job_id': job_id,
-            'timestamp': datetime.now().isoformat(),
-            'status': progress_data.get('status', 'processing'),
-            'total': progress_data.get('total', 0),
-            'completed': progress_data.get('completed', 0),
-            'responses': progress_data.get('responses', []),
-            'question': progress_data.get('question', ''),
-            'ttl': int(datetime.now().timestamp()) + 3600  # Expire after 1 hour
-        })
-    except Exception as e:
-        print(f"Error saving job progress: {e}")
-
-
-def get_job_progress(job_id: str) -> Optional[Dict[str, Any]]:
-    """Get job progress from DynamoDB."""
-    try:
-        table = dynamodb.Table(JOB_PROGRESS_TABLE)
-        response = table.get_item(Key={'job_id': job_id})
-
-        if 'Item' in response:
-            item = response['Item']
-            # Convert DynamoDB format back to app format
-            return {
-                'status': item.get('status', 'processing'),
-                'total': item.get('total', 0),
-                'completed': item.get('completed', 0),
-                'responses': item.get('responses', []),
-                'question': item.get('question', ''),
-                'summary': _calculate_summary(item.get('responses', []))
-            }
-        return None
-    except Exception as e:
-        print(f"Error getting job progress: {e}")
-        return None
-
-
-def _calculate_summary(responses: list) -> Dict[str, list]:
-    """Calculate summary from responses."""
-    summary = {}
-    for response in responses:
-        level = response.get('support_level', 'neutral')
-        if level not in summary:
-            summary[level] = []
-        summary[level].append(response.get('judge_title', ''))
-    return summary
+# Table names (parameterized via env; no job_progress table anymore)
+QUERIES_TABLE = os.environ.get("QUERIES_TABLE", "scotus_queries")
+RESPONSES_TABLE = os.environ.get("RESPONSES_TABLE", "scotus_responses")
 
 
 def log_query(ip_address: str, question: str) -> str:
@@ -88,7 +38,7 @@ def log_query(ip_address: str, question: str) -> str:
 
 
 def log_response(ip_address: str, query_id: str, judge_name: str, judge_title: str,
-                response: str, support_level: str) -> None:
+                 response: str, support_level: str) -> None:
     """Log a judge's response to DynamoDB."""
     try:
         table = dynamodb.Table(RESPONSES_TABLE)
