@@ -79,6 +79,9 @@ class ScotusStack(Stack):
             ),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
             removal_policy=RemovalPolicy.RETAIN,
+            # Auto-expire the time-bucketed rate-limit counter items (RATE#...).
+            # Query/total rows carry no expires_at, so they persist.
+            time_to_live_attribute="expires_at",
         )
         queries_table.add_global_secondary_index(
             index_name="ip_address-index",
@@ -202,6 +205,13 @@ class ScotusStack(Stack):
                 "RESPONSES_TABLE": responses_table_name,
                 # The app reads the key from SSM at runtime using this name.
                 "OPENAI_API_KEY_PARAM": openai_param.parameter_name,
+                # Shared secret CloudFront injects as X-Origin-Secret; the app
+                # rejects requests without it (blocks direct Function URL hits).
+                # Seeded by aws/_lib.sh from SSM and passed in via the environment.
+                "ORIGIN_SECRET": os.environ.get("ORIGIN_SECRET", ""),
+                # Rate limits (per-IP hourly + global daily spend cap).
+                "RATE_PER_IP_HOUR": os.environ.get("RATE_PER_IP_HOUR", "10"),
+                "RATE_GLOBAL_DAY": os.environ.get("RATE_GLOBAL_DAY", "1000"),
             },
         )
 
@@ -267,8 +277,13 @@ class ScotusStack(Stack):
         # read_timeout 60s (max for the default quota): the syllabus can have a
         # long silent reasoning gap after the judges finish; the default 30s
         # would cut the stream. The app also emits a heartbeat to stay well under.
+        # custom_headers: inject the shared secret on every origin request so the
+        # app can reject direct Function URL hits that bypass CloudFront. (OAC
+        # SigV4 signing isn't an option on a RESPONSE_STREAM Function URL.)
         fn_url_origin = origins.FunctionUrlOrigin(
-            fn_url, read_timeout=Duration.seconds(60)
+            fn_url,
+            read_timeout=Duration.seconds(60),
+            custom_headers={"X-Origin-Secret": os.environ.get("ORIGIN_SECRET", "")},
         )
 
         distribution = cloudfront.Distribution(

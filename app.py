@@ -69,6 +69,27 @@ except Exception as e:
     print(f"Error initializing OpenAI client: {e}")
     client = None
 
+# Shared secret injected by CloudFront as the X-Origin-Secret header. When set,
+# every request must carry it — this blocks direct hits on the public Function
+# URL (which bypass CloudFront/WAF). Unset locally -> guard is off for dev.
+ORIGIN_SECRET = os.environ.get("ORIGIN_SECRET")
+
+
+@app.before_request
+async def _enforce_origin_secret():
+    """Reject requests that didn't come through CloudFront (missing/wrong secret).
+
+    /health is exempt so uptime checks work without the secret. No-op when
+    ORIGIN_SECRET is unset (local dev).
+    """
+    if not ORIGIN_SECRET:
+        return None
+    if request.path == '/health':
+        return None
+    if request.headers.get('X-Origin-Secret') != ORIGIN_SECRET:
+        return jsonify({'error': 'forbidden'}), 403
+    return None
+
 
 def load_judge_assistants() -> Dict[str, Dict]:
     """Load judge assistant information from the saved JSON file."""
@@ -443,8 +464,19 @@ async def query_judges():
 
     question = QUERY_PREFIX + question
 
-    # No query limit. IP is captured only for logging + the count display.
     ip_address = get_client_ip(request)
+
+    # Rate limit BEFORE any (expensive) OpenAI work: per-IP hourly + global daily.
+    allowed, reason = await asyncio.to_thread(
+        dynamodb_util.check_rate_limits, ip_address
+    )
+    if not allowed:
+        msg = (
+            "The Court has reached its daily docket limit. Please come back tomorrow."
+            if reason == "global"
+            else "You've reached the hourly query limit. Please wait a bit and try again."
+        )
+        return jsonify({'error': msg}), 429
 
     judge_assistants = load_judge_assistants()
     selected = [(n, judge_assistants[n]) for n in judge_names if n in judge_assistants]

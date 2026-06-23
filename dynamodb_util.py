@@ -13,12 +13,18 @@ Counting strategy (replaces the old full-table scans):
 """
 
 import os
+import time
 import boto3
 from boto3.dynamodb.conditions import Key
 from datetime import datetime
 
 # Initialize DynamoDB resource
 dynamodb = boto3.resource('dynamodb')
+
+# Rate limits (tunable via env). Per-IP hourly throttle + a global daily cap that
+# bounds total OpenAI spend regardless of IP rotation.
+RATE_PER_IP_HOUR = int(os.environ.get("RATE_PER_IP_HOUR", "10"))
+RATE_GLOBAL_DAY = int(os.environ.get("RATE_GLOBAL_DAY", "1000"))
 
 # Table names (parameterized via env; no job_progress table anymore)
 QUERIES_TABLE = os.environ.get("QUERIES_TABLE", "scotus_queries")
@@ -115,3 +121,46 @@ def get_total_query_count() -> int:
     except Exception as e:
         print(f"Error getting total query count: {e}")
         return 0
+
+
+def _bump_and_get(pk: str, ttl_seconds: int) -> int:
+    """Atomically increment a time-bucketed counter item and return the new value.
+
+    The bucket window is encoded in `pk` (…/hour or …/day), so correctness comes
+    from the key rolling over; `ttl` only auto-cleans the stale item afterward.
+    These items carry no `ip_address` attribute, so they stay out of the GSI and
+    never pollute the per-IP display count.
+    """
+    table = dynamodb.Table(QUERIES_TABLE)
+    expires = int(time.time()) + ttl_seconds
+    resp = table.update_item(
+        Key={'ipaddress_timestamp': pk},
+        UpdateExpression='ADD rate_count :one SET expires_at = if_not_exists(expires_at, :exp)',
+        ExpressionAttributeValues={':one': 1, ':exp': expires},
+        ReturnValues='UPDATED_NEW',
+    )
+    return int(resp['Attributes']['rate_count'])
+
+
+def check_rate_limits(ip_address: str):
+    """Increment + check the per-IP hourly and global daily counters.
+
+    Returns (allowed: bool, reason: str|None) where reason is 'ip' or 'global'.
+    Per-IP is checked first so a single-IP flood is rejected WITHOUT burning the
+    global budget. Localhost is exempt (local dev). Fails OPEN — a DynamoDB hiccup
+    never blocks legitimate users.
+    """
+    if ip_address in _LOCALHOST:
+        return True, None
+    try:
+        now = datetime.utcnow()
+        ip_key = f"RATE#IP#{ip_address}#{now.strftime('%Y%m%d%H')}"
+        if _bump_and_get(ip_key, 2 * 3600) > RATE_PER_IP_HOUR:
+            return False, "ip"
+        day_key = f"RATE#GLOBAL#{now.strftime('%Y%m%d')}"
+        if _bump_and_get(day_key, 48 * 3600) > RATE_GLOBAL_DAY:
+            return False, "global"
+        return True, None
+    except Exception as e:
+        print(f"Error checking rate limits: {e}")
+        return True, None

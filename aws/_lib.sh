@@ -36,6 +36,22 @@ fi
 # Verbatim CloudFormation stack name from infra/scotus_stack.py.
 STACK_NAME="${STACK_NAME:-ScotusStack}"
 
+# Origin secret: CloudFront injects it as the X-Origin-Secret header and the app
+# rejects requests that lack it (blocks direct Function URL hits). Kept in SSM so
+# it's stable across deploys; auto-created on first deploy. Exported into the
+# environment so the CDK stack wires it to both CloudFront and the Lambda.
+if command -v aws >/dev/null 2>&1 && command -v python3 >/dev/null 2>&1; then
+  ORIGIN_SECRET_PARAM="${ORIGIN_SECRET_PARAM:-/scotus/origin-secret}"
+  ORIGIN_SECRET="$(aws ssm get-parameter --region "$AWS_REGION" \
+    --name "$ORIGIN_SECRET_PARAM" --query 'Parameter.Value' --output text 2>/dev/null || true)"
+  if [ -z "$ORIGIN_SECRET" ] || [ "$ORIGIN_SECRET" = "None" ]; then
+    ORIGIN_SECRET="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
+    aws ssm put-parameter --region "$AWS_REGION" --name "$ORIGIN_SECRET_PARAM" \
+      --type String --value "$ORIGIN_SECRET" --overwrite >/dev/null
+  fi
+  export ORIGIN_SECRET
+fi
+
 color() {
   local c="$1"; shift
   printf "\033[%sm%s\033[0m\n" "$c" "$*"
