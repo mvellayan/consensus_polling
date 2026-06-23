@@ -49,6 +49,19 @@ JUDGE_IMAGES = {
     'thomas': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Associate_Justice_Clarence_Thomas%2C_official_SCOTUS_portrait%2C_crop.jpg/220px-Associate_Justice_Clarence_Thomas%2C_official_SCOTUS_portrait%2C_crop.jpg',
 }
 
+# In Lambda the OpenAI key lives in SSM (OPENAI_API_KEY_PARAM); locally it comes
+# from .env. Fetch + export it before constructing the client.
+if not os.environ.get("OPENAI_API_KEY") and os.environ.get("OPENAI_API_KEY_PARAM"):
+    try:
+        import boto3
+        _val = boto3.client("ssm").get_parameter(
+            Name=os.environ["OPENAI_API_KEY_PARAM"], WithDecryption=True
+        )["Parameter"]["Value"]
+        os.environ["OPENAI_API_KEY"] = _val
+        print("Loaded OPENAI_API_KEY from SSM")
+    except Exception as e:
+        print(f"Error loading OPENAI_API_KEY from SSM: {e}")
+
 # Initialize the async OpenAI client with error handling
 try:
     client = AsyncOpenAI()

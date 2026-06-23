@@ -1,6 +1,6 @@
 # Core dependencies for the Quart AI Supreme Court application
 quart
-hypercorn
+uvicorn
 openai>=1.0.0
 boto3
 

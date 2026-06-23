@@ -160,6 +160,32 @@ class ScotusStack(Stack):
                     ".claude",
                 ],
                 ignore_mode=cdk.IgnoreMode.GLOB,
+                # The zip must contain the installed Python deps (hypercorn, quart,
+                # openai, boto3, ...), not just source — otherwise run.sh's
+                # `python -m hypercorn` fails with exit 127. Bundle via Docker:
+                # pip install into /asset-output, then copy the app source in.
+                bundling=cdk.BundlingOptions(
+                    image=_lambda.Runtime.PYTHON_3_12.bundling_image,
+                    # Build for the Lambda's x86_64 arch, not the (arm64) Mac host —
+                    # otherwise pip installs arm64 wheels and compiled extensions like
+                    # pydantic_core._pydantic_core fail to load on the x86_64 runtime.
+                    platform="linux/amd64",
+                    command=[
+                        "bash", "-c",
+                        " && ".join([
+                            "pip install -r requirements.txt -t /asset-output",
+                            # boto3/botocore (~27 MB) ship in the Lambda runtime —
+                            # strip them so the package stays small + cold-starts fast.
+                            "rm -rf /asset-output/boto3* /asset-output/botocore* "
+                            "/asset-output/s3transfer* /asset-output/jmespath*",
+                            "cp app.py dynamodb_util.py run.sh /asset-output/",
+                            "chmod +x /asset-output/run.sh",
+                            "cp -r templates static /asset-output/",
+                            "mkdir -p /asset-output/scotus",
+                            "cp scotus/judge_assistants.json /asset-output/scotus/",
+                        ]),
+                    ],
+                ),
             ),
             layers=[lwa_layer],
             timeout=Duration.seconds(300),
@@ -185,10 +211,15 @@ class ScotusStack(Stack):
         openai_param.grant_read(app_fn)
 
         # ------------------------------------------------------------------
-        # Function URL — response streaming, IAM-authed (signed by CloudFront OAC).
+        # Function URL — response streaming.
+        # AuthType NONE: CloudFront OAC SigV4 signing of a streaming Function URL
+        # is rejected by the URL's IAM layer (a known OAC + RESPONSE_STREAM edge),
+        # so we make the URL public and front it with CloudFront. The raw URL is
+        # then publicly invokable; mitigated by the app's 5/IP rate limit. Harden
+        # later with a CloudFront custom-header secret the app checks.
         # ------------------------------------------------------------------
         fn_url = app_fn.add_function_url(
-            auth_type=_lambda.FunctionUrlAuthType.AWS_IAM,
+            auth_type=_lambda.FunctionUrlAuthType.NONE,
             invoke_mode=_lambda.InvokeMode.RESPONSE_STREAM,
         )
 
