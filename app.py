@@ -154,30 +154,20 @@ def calculate_summary(responses: List[Dict]) -> Dict[str, list]:
 
 
 def get_client_ip(req) -> str:
-    """Get the real client IP address from various headers."""
-    headers_to_check = [
-        'X-Forwarded-For',
-        'X-Real-IP',
-        'X-Client-IP',
-        'CF-Connecting-IP',  # Cloudflare
-        'True-Client-IP',
-        'X-Forwarded',
-        'Forwarded-For',
-    ]
+    """Real viewer IP behind CloudFront.
 
-    for header in headers_to_check:
-        ip = req.headers.get(header)
-        if ip:
-            if ',' in ip:
-                ip = ip.split(',')[0].strip()
-            if not ip.startswith('3.235.'):
-                return ip
+    CloudFront-Viewer-Address is CloudFront's own measurement of the TCP peer
+    (the viewer) — the most authoritative source and not viewer-spoofable.
+    Format: "1.2.3.4:port" (IPv4) or "[2600:..]:port" (IPv6). Fall back to the
+    leftmost X-Forwarded-For, then remote_addr.
+    """
+    cf = req.headers.get('CloudFront-Viewer-Address')
+    if cf:
+        return cf.rsplit(':', 1)[0].strip('[]') or cf
 
-    forwarded = req.headers.get('Forwarded')
-    if forwarded:
-        match = re.search(r'for=([^;,\s]+)', forwarded)
-        if match:
-            return match.group(1)
+    xff = req.headers.get('X-Forwarded-For')
+    if xff:
+        return xff.split(',')[0].strip()
 
     return req.remote_addr or '127.0.0.1'
 
@@ -256,6 +246,15 @@ async def _stream_judge(judge_name: str, judge_info: Dict, question: str,
 
         enhanced_instructions = (
             f"{judge_info['instructions']}\n\n"
+            "OUTCOME DEFINITION (critical): the FIRST line must be exactly one of "
+            "Support, Overturn, or Remand, judged about THE GOVERNMENT ACTION OR "
+            "PROPOSITION IN THE QUESTION:\n"
+            "  - Support  = it is CONSTITUTIONAL / the government MAY do it / upheld.\n"
+            "  - Overturn = it is UNCONSTITUTIONAL / the government MAY NOT do it / struck down.\n"
+            "  - Remand   = unclear, fact-dependent, or needs further proceedings.\n"
+            "Your first-line label MUST match your reasoning. If you conclude the "
+            "action is unconstitutional or not permitted, the first line MUST be "
+            "'Overturn' (never 'Support').\n\n"
             "IMPORTANT: Keep your response under 2000 characters. "
             "Be concise and focused."
         )
