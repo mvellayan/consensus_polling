@@ -267,7 +267,7 @@ async def _stream_judge(judge_name: str, judge_info: Dict, question: str,
                 "type": "file_search",
                 "vector_store_ids": [judge_info['vector_store_id']],
             }],
-            reasoning={"effort": "medium"},
+            reasoning={"effort": "low"},
             stream=True,
         )
 
@@ -379,7 +379,7 @@ async def _stream_syllabus(completed: List[Dict], tally_string: str,
             model=MODEL,
             instructions=instructions,
             input=prompt,
-            reasoning={"effort": "medium"},
+            reasoning={"effort": "low"},
             stream=True,
         )
 
@@ -394,8 +394,12 @@ async def _stream_syllabus(completed: List[Dict], tally_string: str,
                         "text": delta,
                     }))
         return "".join(parts)
+    except asyncio.CancelledError:
+        # A cancellation (e.g. client/connection cut) is not a syllabus failure —
+        # re-raise without emitting a syllabus_error; the finally still signals done.
+        raise
     except Exception as e:
-        error_msg = str(e)
+        error_msg = f"{type(e).__name__}: {e}"
         print(f"Error streaming syllabus: {error_msg}")
         await out_queue.put(("syllabus_error", {
             "type": "syllabus_error",
@@ -406,6 +410,22 @@ async def _stream_syllabus(completed: List[Dict], tally_string: str,
         # Always signal completion so the drain loop terminates deterministically
         # (mirrors the per-judge __done__ sentinel — no timeout polling).
         await out_queue.put(("__syllabus_done__", {"type": "__syllabus_done__"}))
+
+
+async def _heartbeat(out_queue: "asyncio.Queue", interval: float = 3.0) -> None:
+    """Emit a tiny 'ping' every few seconds so the response never goes idle.
+
+    The long silent gap while the syllabus model reasons (after all judges
+    finish) can trip an idle/read timeout and cut the stream before the
+    syllabus arrives. A periodic ping keeps bytes flowing. The frontend
+    ignores 'ping' events.
+    """
+    try:
+        while True:
+            await asyncio.sleep(interval)
+            await out_queue.put(("ping", {"type": "ping"}))
+    except asyncio.CancelledError:
+        return
 
 
 @app.route('/api/query', methods=['POST'])
@@ -442,6 +462,7 @@ async def query_judges():
             for name, info in selected
         ]
         remaining = len(tasks)
+        hb_task = asyncio.create_task(_heartbeat(out_queue))
 
         try:
             # Multiplex judge tokens/events until every judge task signals done.
@@ -497,7 +518,8 @@ async def query_judges():
                     )
             except Exception as e:
                 print(f"Error during durable write: {e}")
-            # Make sure no judge task is left dangling.
+            # Stop the heartbeat and make sure no judge task is left dangling.
+            hb_task.cancel()
             for t in tasks:
                 if not t.done():
                     t.cancel()

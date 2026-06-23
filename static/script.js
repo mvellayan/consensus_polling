@@ -350,6 +350,8 @@ function handleStreamLine(line, judgeCards) {
         case 'done':
             finalizeSyllabus();
             break;
+        case 'ping':
+            break; // keep-alive heartbeat — ignore
         default:
             console.warn('Unknown stream event type:', event.type);
     }

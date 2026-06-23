@@ -264,7 +264,12 @@ class ScotusStack(Stack):
         #   - allow all viewer methods (incl. POST)
         # OAC is attached below via escape hatch (see note).
         # ------------------------------------------------------------------
-        fn_url_origin = origins.FunctionUrlOrigin(fn_url)
+        # read_timeout 60s (max for the default quota): the syllabus can have a
+        # long silent reasoning gap after the judges finish; the default 30s
+        # would cut the stream. The app also emits a heartbeat to stay well under.
+        fn_url_origin = origins.FunctionUrlOrigin(
+            fn_url, read_timeout=Duration.seconds(60)
+        )
 
         distribution = cloudfront.Distribution(
             self,
