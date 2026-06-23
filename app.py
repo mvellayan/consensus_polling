@@ -29,7 +29,7 @@ except ImportError:
 
 app = Quart(__name__)
 
-MODEL = "gpt-5-nano"
+MODEL = "gpt-5"
 QUERY_PREFIX = (
     "Can you decide if this is constitutional, follows federal laws, "
     "and respects power balance and individual rights? "
