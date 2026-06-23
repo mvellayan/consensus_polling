@@ -1,6 +1,6 @@
 let judges = [];
 let selectedJudges = new Set();
-let queriesRemaining = 5;
+let queryInfo = { ip: null, count: 0 }; // informational only — no query limit
 let isProcessing = false; // Flag to prevent button re-enabling during processing
 
 // DOM elements - will be found after DOM loads
@@ -143,24 +143,20 @@ function updateAskButton() {
     
     const hasQuestion = questionInput.value.trim().length > 0;
     const hasSelectedJudges = selectedJudges.size > 0;
-    
-    const shouldEnable = hasQuestion && hasSelectedJudges && queriesRemaining > 0;
+
+    const shouldEnable = hasQuestion && hasSelectedJudges;
     askButton.disabled = !shouldEnable;
 }
 
-// Check query limit
+// Fetch this IP's address + query count (informational; there is no limit)
 async function checkQueryLimit() {
     try {
-        console.log('Checking query limit...');
         const response = await fetch(`${window.location.origin}/api/check-limit`);
         const data = await response.json();
-        console.log('Query limit response:', data);
-
-        queriesRemaining = data.remaining;
-        console.log('Updated queriesRemaining to:', queriesRemaining);
+        queryInfo = { ip: data.ip_address, count: data.count };
         updateQueryStatus();
     } catch (error) {
-        console.error('Error checking query limit:', error);
+        console.error('Error fetching query info:', error);
     }
 }
 
@@ -184,22 +180,16 @@ async function loadTotalQueryCount() {
     }
 }
 
-// Update query status display
+// Show this IP's address + query count (informational; no limit)
 function updateQueryStatus() {
-    console.log('updateQueryStatus called with queriesRemaining:', queriesRemaining);
     const statusElement = document.getElementById('queries-remaining');
-    if (!statusElement) {
-        console.log('queries-remaining element not found');
-        return;
-    }
+    if (!statusElement) return;
 
-    if (queriesRemaining === 0) {
-        statusElement.innerHTML = '<span class="limit-reached">No more queries remaining (5/5 used)</span>';
-        askButton.disabled = true;
-    } else {
-        statusElement.innerHTML = `Queries remaining: <span class="queries-count">${queriesRemaining}/5</span>`;
-    }
-    console.log('Updated status element to:', statusElement.innerHTML);
+    const ip = queryInfo.ip ? escapeHtml(String(queryInfo.ip)) : 'unknown';
+    const n = Number(queryInfo.count) || 0;
+    statusElement.innerHTML =
+        `IP: <span class="queries-count">${ip}</span> &middot; ` +
+        `<span class="queries-count">${n}</span> ${n === 1 ? 'query' : 'queries'}`;
 }
 
 // Escape HTML to safely render streamed model text as text content
@@ -265,12 +255,6 @@ async function handleAskQuestion() {
                 judges: Array.from(selectedJudges)
             })
         });
-
-        if (response.status === 429) {
-            showAlert('Query limit reached. Maximum 5 queries per IP address.', 'warning');
-            responsesSection.style.display = 'none';
-            return;
-        }
 
         if (!response.ok || !response.body) {
             let msg = 'An error occurred while querying the Justices';

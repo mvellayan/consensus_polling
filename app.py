@@ -34,7 +34,6 @@ QUERY_PREFIX = (
     "Can you decide if this is constitutional, follows federal laws, "
     "and respects power balance and individual rights? "
 )
-RATE_LIMIT = 5
 
 # Judge profile pictures
 JUDGE_IMAGES = {
@@ -216,16 +215,12 @@ async def get_judges():
 
 @app.route('/api/check-limit')
 async def check_limit():
-    """Check if IP has reached query limit."""
+    """Return this IP's address and how many queries it has made (no limit)."""
     ip_address = get_client_ip(request)
     count = await asyncio.to_thread(dynamodb_util.get_ip_query_count, ip_address)
-    if ip_address in ['127.0.0.1', '::1']:
-        count = 0
     return jsonify({
+        'ip_address': ip_address,
         'count': count,
-        'remaining': max(0, RATE_LIMIT - count),
-        'limit_reached': count >= RATE_LIMIT,
-        'debug_ip': ip_address,
     })
 
 
@@ -429,13 +424,8 @@ async def query_judges():
 
     question = QUERY_PREFIX + question
 
-    # Rate limit BEFORE opening the stream.
+    # No query limit. IP is captured only for logging + the count display.
     ip_address = get_client_ip(request)
-    count = await asyncio.to_thread(dynamodb_util.get_ip_query_count, ip_address)
-    if count >= RATE_LIMIT:
-        return jsonify({
-            'error': 'Query limit reached. Maximum 5 queries per IP address.'
-        }), 429
 
     judge_assistants = load_judge_assistants()
     selected = [(n, judge_assistants[n]) for n in judge_names if n in judge_assistants]

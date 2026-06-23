@@ -277,22 +277,32 @@ async def test_single_judge_tldr_path(monkeypatch):
 
 
 # --------------------------------------------------------------------------
-# Rate limiting
+# No query limit — IP + count are informational only
 # --------------------------------------------------------------------------
 
 @pytest.mark.asyncio
-async def test_rate_limit_429_before_stream(monkeypatch):
+async def test_no_query_limit_high_count_still_streams(monkeypatch):
+    """A high per-IP count must NOT be blocked (limit removed)."""
     judges = {
         "roberts": {"judge_title": "Chief Justice Roberts",
                     "vector_store_id": "vs_roberts", "instructions": "x"},
     }
     monkeypatch.setattr(appmod, "load_judge_assistants", lambda: judges)
-    tc = _make_app_client(monkeypatch, {"vs_roberts": (["x"], None)}, ip_count=6)
+    tc = _make_app_client(monkeypatch, {"vs_roberts": (["x"], None)}, ip_count=999)
 
     resp = await tc.post("/api/query", json={"question": "q", "judges": ["roberts"]})
-    assert resp.status_code == 429
+    assert resp.status_code == 200  # streams, no 429
+
+
+@pytest.mark.asyncio
+async def test_check_limit_returns_ip_and_count(monkeypatch):
+    tc = _make_app_client(monkeypatch, {}, ip_count=7)
+    resp = await tc.get("/api/check-limit")
+    assert resp.status_code == 200
     data = await resp.get_json()
-    assert "limit" in data["error"].lower()
+    assert data["count"] == 7
+    assert "ip_address" in data
+    assert "remaining" not in data and "limit_reached" not in data
 
 
 @pytest.mark.asyncio
