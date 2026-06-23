@@ -39,9 +39,10 @@ aws ssm put-parameter \
   --overwrite >/dev/null
 ok "OpenAI key stored in SSM"
 
-# --- 2. Install infra deps, bootstrap, deploy ---------------------------------
-info "Installing infra dependencies ..."
-( cd "$INFRA_DIR" && pip install -r requirements.txt )
+# --- 2. Install infra deps (into infra/.venv), bootstrap, deploy --------------
+# cdk.json runs `.venv/bin/python app.py`, so the deps must live in that venv.
+info "Installing infra dependencies (infra/.venv) ..."
+( cd "$INFRA_DIR" && python3 -m venv .venv && ./.venv/bin/pip install -q -r requirements.txt )
 
 info "Bootstrapping CDK (idempotent) ..."
 ( cd "$INFRA_DIR" && npx aws-cdk bootstrap )
