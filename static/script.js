@@ -240,65 +240,66 @@ async function handleAskQuestion() {
     responsesSection.style.display = 'block';
     setupResultsScaffold();
 
-    // Per-judge state lives here for the duration of one stream
-    const judgeCards = {}; // slug -> { card, textEl, buffer }
-    let streamErrored = false;
+    // Per-judge state for the current stream. Recreated on retry.
+    let judgeCards = {};
+    const MAX_ATTEMPTS = 2;
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
     try {
-        const response = await fetch(`${window.location.origin}/api/query`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                question: question,
-                judges: Array.from(selectedJudges)
-            })
-        });
-
-        if (!response.ok || !response.body) {
-            let msg = 'An error occurred while querying the Justices';
+        // Lambda response streaming can reset a reused connection, so the 2nd+
+        // query may fail at stream-open. Retry once on a fresh connection IF
+        // nothing was rendered yet (a mid-stream failure must NOT retry).
+        for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+            judgeCards = {};
+            if (attempt > 1) setupResultsScaffold();
+            let receivedData = false;
             try {
-                const error = await response.json();
-                msg = error.error || msg;
-            } catch (e) { /* non-JSON error body */ }
-            showAlert(msg, 'error');
-            responsesSection.style.display = 'none';
-            return;
-        }
+                const response = await fetch(`${window.location.origin}/api/query`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        question: question,
+                        judges: Array.from(selectedJudges)
+                    })
+                });
 
-        // Stream the NDJSON body. Tokens may split mid-line across network
-        // chunks, so we buffer the trailing partial line and only parse
-        // complete (newline-terminated) lines.
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
+                if (!response.ok || !response.body) {
+                    if (attempt < MAX_ATTEMPTS) { await sleep(400); continue; }
+                    let msg = 'An error occurred while querying the Justices';
+                    try { const err = await response.json(); msg = err.error || msg; }
+                    catch (e) { /* non-JSON error body */ }
+                    showAlert(msg, 'error');
+                    responsesSection.style.display = 'none';
+                    return;
+                }
 
-        while (true) {
-            const { value, done } = await reader.read();
-            if (done) break;
-
-            buffer += decoder.decode(value, { stream: true });
-
-            let newlineIndex;
-            while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
-                const line = buffer.slice(0, newlineIndex);
-                buffer = buffer.slice(newlineIndex + 1);
-                handleStreamLine(line, judgeCards);
+                // Stream NDJSON. Tokens may split mid-line across chunks, so
+                // buffer the trailing partial line and parse only complete lines.
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    receivedData = true;
+                    buffer += decoder.decode(value, { stream: true });
+                    let newlineIndex;
+                    while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+                        const line = buffer.slice(0, newlineIndex);
+                        buffer = buffer.slice(newlineIndex + 1);
+                        handleStreamLine(line, judgeCards);
+                    }
+                }
+                buffer += decoder.decode();
+                if (buffer.trim().length > 0) handleStreamLine(buffer, judgeCards);
+                return; // completed
+            } catch (error) {
+                console.error(`Query attempt ${attempt} failed:`, error);
+                if (!receivedData && attempt < MAX_ATTEMPTS) { await sleep(400); continue; }
+                showAlert('An error occurred while querying the Justices', 'error');
+                return;
             }
         }
-
-        // Flush any decoder remainder, then parse a trailing line with no
-        // terminating newline (the last event may arrive without one).
-        buffer += decoder.decode();
-        if (buffer.trim().length > 0) {
-            handleStreamLine(buffer, judgeCards);
-        }
-
-    } catch (error) {
-        console.error('Error querying judges:', error);
-        streamErrored = true;
-        showAlert('An error occurred while querying the Justices', 'error');
     } finally {
         finalizeSyllabus();
         isProcessing = false; // Clear processing flag
