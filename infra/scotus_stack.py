@@ -32,6 +32,8 @@ from aws_cdk import (
     aws_cloudfront_origins as origins,
     aws_certificatemanager as acm,
     aws_dynamodb as dynamodb,
+    aws_events as events,
+    aws_events_targets as events_targets,
     aws_lambda as _lambda,
     aws_route53 as route53,
     aws_route53_targets as targets,
@@ -219,6 +221,47 @@ class ScotusStack(Stack):
         queries_table.grant_read_write_data(app_fn)
         responses_table.grant_read_write_data(app_fn)
         openai_param.grant_read(app_fn)
+
+        # ------------------------------------------------------------------
+        # Warm-boot ping — EventBridge invokes the Lambda every 5 minutes with a
+        # synthetic GET /health (Function URL payload v2, which the Web Adapter
+        # understands) to keep one execution environment warm. Cold starts
+        # otherwise push the first query's 9-judge run toward the ~60s streaming
+        # cap and can clip the trailing syllabus; this keeps the common case warm
+        # (~45s). /health is exempt from the origin-secret check and isn't
+        # rate-limited, so the ping returns a clean 200. Effectively free:
+        # ~8,640 invokes/mo, well inside the Lambda free tier. A missed ping is
+        # harmless (retry_attempts=0); this reduces cold starts, doesn't raise
+        # the cap — the architectural fix is to stop gating the syllabus on one
+        # sub-60s response.
+        # ------------------------------------------------------------------
+        warm_event = events_targets.LambdaFunction(
+            app_fn,
+            event=events.RuleTargetInput.from_object({
+                "version": "2.0",
+                "routeKey": "$default",
+                "rawPath": "/health",
+                "rawQueryString": "",
+                "headers": {"x-warmboot": "1"},
+                "requestContext": {
+                    "http": {
+                        "method": "GET",
+                        "path": "/health",
+                        "protocol": "HTTP/1.1",
+                        "sourceIp": "127.0.0.1",
+                    },
+                },
+                "isBase64Encoded": False,
+            }),
+            retry_attempts=0,
+        )
+        events.Rule(
+            self,
+            "WarmBootRule",
+            schedule=events.Schedule.rate(Duration.minutes(5)),
+            description="Keep scotus-app Lambda warm (GET /health every 5 min)",
+            targets=[warm_event],
+        )
 
         # ------------------------------------------------------------------
         # Function URL — response streaming.

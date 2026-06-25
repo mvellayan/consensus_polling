@@ -202,8 +202,11 @@ rejected on a `RESPONSE_STREAM` Function URL. Two defenses compensate:
 ## Known limitations / future work
 
 - **Cold-start margin.** The first query after idle runs close to the 60 s cap.
-  A free fix is a "warmer" ping (EventBridge → `/health` every ~5 min); a hard
-  guarantee is Provisioned Concurrency (~$11/mo). Neither is implemented.
+  A free "warmer" ping (EventBridge → synthetic `GET /health` every 5 min) **is
+  implemented** in `infra/scotus_stack.py` to keep one execution environment warm
+  and is effectively free (~8,640 invokes/mo, inside the Lambda free tier). It
+  reduces cold starts but does not *raise* the cap; a hard latency guarantee
+  would still need Provisioned Concurrency (~$11/mo), which is not implemented.
 - **The 60 s cap** ultimately blocks deeper (`medium`/`high`) reasoning for
   9-judge runs. Raising it would need an architectural change (don't gate the
   syllabus on one 60 s response) or an AWS quota path.
