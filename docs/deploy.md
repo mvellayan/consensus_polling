@@ -4,8 +4,6 @@ The AI Supreme Court runs as a single CDK stack, **`ScotusStack`**, deploying a
 Quart streaming app on **Lambda response streaming** behind
 **CloudFront → Lambda Function URL (OAC)** on the custom domain **scotus.run**.
 
-This supersedes the stale `DEPLOYMENT_README.md` (Fargate-era) intent.
-
 ## Architecture (one paragraph)
 
 A single Lambda (`scotus-app`, python3.12 + Lambda Web Adapter layer, zip-packaged)
